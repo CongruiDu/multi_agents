@@ -129,7 +129,8 @@ def ChatGPT_safe_generate_response(prompt,
                                    fail_safe_response="error",
                                    func_validate=None,
                                    func_clean_up=None,
-                                   verbose=False): 
+                                   verbose=False,
+                                   pron=False): 
   # prompt = 'GPT-3 Prompt:\n"""\n' + prompt + '\n"""\n'
   prompt = '"""\n' + prompt + '\n"""\n'
   prompt += f"Output the response to the prompt above in json. {special_instruction}\n"
@@ -151,8 +152,12 @@ def ChatGPT_safe_generate_response(prompt,
       # print ("---ashdfaf")
       # print (curr_gpt_response)
       # print ("000asdfhia")
+      if pron==True:
+        return curr_gpt_response
+      
       if func_validate(curr_gpt_response, prompt=prompt): 
         return func_clean_up(curr_gpt_response, prompt=prompt)
+      
       
       if verbose: 
         print ("---- repeat count: \n", i, curr_gpt_response)

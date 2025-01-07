@@ -243,7 +243,6 @@ def generate_action_pronunciatio(act_desp, persona):
     "🧈🍞"
   """
   if debug: print ("GNS FUNCTION: <generate_action_pronunciatio>")
-  ipdb.set_trace()
   try: 
     x = run_gpt_prompt_pronunciatio(act_desp, persona)[0]
   except: 

@@ -36,9 +36,11 @@ def generate_wake_up_hour(persona):
   """
   if debug: print ("GNS FUNCTION: <generate_wake_up_hour>")
   return int(run_gpt_prompt_wake_up_hour(persona)[0])
+def generate_go_to_bed_hour(persona):
+  if debug: print ("GNS FUNCTION: <generate_go_to_bed_hour>")
+  return int(run_gpt_prompt_go_to_bed_hour(persona)[0])
 
-
-def generate_first_daily_plan(persona, wake_up_hour): 
+def generate_next_activity_plan(persona, wake_up_hour,bedtime): 
   """
   Generates the daily plan for the persona. 
   Basically the long term planning that spans a day. Returns a list of actions
@@ -53,6 +55,8 @@ def generate_first_daily_plan(persona, wake_up_hour):
     persona: The Persona class instance 
     wake_up_hour: an integer that indicates when the hour the persona wakes up 
                   (e.g., 8)
+    bedtime: an integer that indicates when the hour the persona goes to bed 
+                  (e.g., 8)
   OUTPUT: 
     a list of daily actions in broad strokes.
   EXAMPLE OUTPUT: 
@@ -64,8 +68,8 @@ def generate_first_daily_plan(persona, wake_up_hour):
      'work on painting project from 4:00 pm to 6:00 pm', 
      'have dinner at 6:00 pm', 'watch TV from 7:00 pm to 8:00 pm']
   """
-  if debug: print ("GNS FUNCTION: <generate_first_daily_plan>")
-  return run_gpt_prompt_daily_plan(persona, wake_up_hour)[0]
+  if debug: print ("GNS FUNCTION: <generate_next_activity_plan>")
+  return run_gpt_prompt_daily_plan(persona, wake_up_hour,bedtime)[0]
 
 
 def generate_hourly_schedule(persona, wake_up_hour): 
@@ -239,6 +243,7 @@ def generate_action_pronunciatio(act_desp, persona):
     "🧈🍞"
   """
   if debug: print ("GNS FUNCTION: <generate_action_pronunciatio>")
+  ipdb.set_trace()
   try: 
     x = run_gpt_prompt_pronunciatio(act_desp, persona)[0]
   except: 
@@ -312,7 +317,31 @@ def generate_decide_to_react(init_persona, target_persona, retrieved):
   if debug: print ("GNS FUNCTION: <generate_decide_to_react>")
   return run_gpt_prompt_decide_to_react(init_persona, target_persona, retrieved)[0]
 
+def convert_event_to_minutes(event_info):
+    """
+    Converts an event description with a time range to a list containing the event text
+    and the duration in minutes.
 
+    Args:
+        event_info (list): A list containing a single string in the format 
+                          '<event_description> from <start_time> to <end_time>'.
+
+    Returns:
+        list: A nested list where the first element is the event description and 
+              the second is the duration in minutes.
+    """
+    # Extract the text and time range
+    event_text, time_range = event_info[0].rsplit(' from ', 1)
+    start_time, end_time = time_range.split(' to ')
+
+    # Convert time to datetime and calculate duration in minutes
+    start_dt = datetime.datetime.strptime(start_time.strip(), '%I:%M %p')
+    end_dt = datetime.datetime.strptime(end_time.strip(), '%I:%M %p')
+    duration_minutes = int((end_dt - start_dt).total_seconds() // 60)
+
+    # Return the formatted result
+    return [[event_text.strip(), duration_minutes]]
+  
 def generate_new_decomp_schedule(persona, inserted_act, inserted_act_dur,  start_hour, end_hour): 
   # Step 1: Setting up the core variables for the function. 
   # <p> is the persona whose schedule we are editing right now. 
@@ -446,7 +475,7 @@ def revise_identity(persona):
   # print (new_currently[10:])
 
   persona.scratch.currently = new_currently
-
+  # TODO--------------------------------------------
   daily_req_prompt = persona.scratch.get_str_iss() + "\n"
   daily_req_prompt += f"Today is {persona.scratch.curr_time.strftime('%A %B %d')}. Here is {persona.scratch.name}'s plan today in broad-strokes (with the time of the day. e.g., have a lunch at 12:00 pm, watch TV from 7 to 8 pm).\n\n"
   daily_req_prompt += f"Follow this format (the list should have 4~6 items but no more):\n"
@@ -470,18 +499,23 @@ def _long_term_planning(persona, new_day):
   """
   # We start by creating the wake up hour for the persona. 
   wake_up_hour = generate_wake_up_hour(persona)
+  bedtime = generate_go_to_bed_hour(persona)
+  hour_of_sleep = 12 - bedtime + wake_up_hour
 
   # When it is a new day, we start by creating the daily_req of the persona.
   # Note that the daily_req is a list of strings that describe the persona's
   # day in broad strokes.
+
+
   if new_day == "First day": 
     # Bootstrapping the daily plan for the start of then generation:
     # if this is the start of generation (so there is no previous day's 
     # daily requirement, or if we are on a new day, we want to create a new
     # set of daily requirements.
-    persona.scratch.daily_req = generate_first_daily_plan(persona, 
-                                                          wake_up_hour)
+    persona.scratch.daily_req = generate_next_activity_plan(persona, 
+                                                          wake_up_hour,bedtime)
   elif new_day == "New day":
+    persona.scratch.clear_curr_plan()
     revise_identity(persona)
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - TODO
@@ -491,8 +525,9 @@ def _long_term_planning(persona, new_day):
   # Based on the daily_req, we create an hourly schedule for the persona, 
   # which is a list of todo items with a time duration (in minutes) that 
   # add up to 24 hours.
-  persona.scratch.f_daily_schedule = generate_hourly_schedule(persona, 
-                                                              wake_up_hour)
+  # persona.scratch.f_daily_schedule = generate_hourly_schedule(persona, 
+  #                                                             wake_up_hour)
+  persona.scratch.f_daily_schedule = convert_event_to_minutes(persona.scratch.daily_req)
   persona.scratch.f_daily_schedule_hourly_org = (persona.scratch
                                                    .f_daily_schedule[:])
 
@@ -608,14 +643,13 @@ def _determine_action(persona, maze):
     x_emergency += i[1]
   # print ("x_emergency", x_emergency)
 
-  if 1440 - x_emergency > 0: 
-    print ("x_emergency__AAA", x_emergency)
-  persona.scratch.f_daily_schedule += [["sleeping", 1440 - x_emergency]]
+  # if 1440 - x_emergency > 0: 
+  #   print ("x_emergency__AAA", x_emergency)
+  # persona.scratch.f_daily_schedule += [["No Plan", 1440 - x_emergency]]
   
 
 
-
-  act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index] 
+  act_desp, act_dura = persona.scratch.f_daily_schedule[-1] 
 
 
 
@@ -951,7 +985,7 @@ def plan(persona, maze, personas, new_day, retrieved):
     The target action address of the persona (persona.scratch.act_address).
   """ 
   # PART 1: Generate the hourly schedule. 
-  if new_day: 
+  if not persona.scratch.is_busy: 
     _long_term_planning(persona, new_day)
 
   # PART 2: If the current action has expired, we want to create a new plan.

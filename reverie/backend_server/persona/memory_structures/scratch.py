@@ -29,6 +29,12 @@ class Scratch:
     self.curr_tile = None
     # Perceived world daily requirement. 
     self.daily_plan_req = None
+
+    # Current plan for the day
+    self.curr_plan = []
+
+    # If the persona is currenty busy or not.
+    self.is_busy = False
     
     # THE CORE IDENTITY OF THE PERSONA 
     # Base information about the persona.
@@ -432,6 +438,12 @@ class Scratch:
 
   def get_str_innate(self): 
     return self.innate
+  
+  def get_curr_plan(self): 
+    return self.curr_plan
+  
+  def get_is_busy(self):
+    return self.is_busy
 
 
   def get_str_learned(self): 
@@ -449,6 +461,11 @@ class Scratch:
   def get_str_daily_plan_req(self): 
     return self.daily_plan_req
 
+  def append_curr_plan(self, plan):
+    self.curr_plan.append(plan)
+  
+  def clear_curr_plan(self):
+    self.curr_plan = []
 
   def get_str_curr_date_str(self): 
     return self.curr_time.strftime("%A %B %d")

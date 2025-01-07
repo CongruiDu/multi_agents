@@ -8,6 +8,7 @@ import json
 import random
 import openai
 import time 
+import ipdb
 
 from utils import *
 
@@ -20,7 +21,7 @@ def ChatGPT_single_request(prompt):
   temp_sleep()
 
   completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo", 
+    model="gpt-3.5-turbo-instruct", 
     messages=[{"role": "user", "content": prompt}]
   )
   return completion["choices"][0]["message"]["content"]
@@ -70,13 +71,14 @@ def ChatGPT_request(prompt):
   """
   # temp_sleep()
   try: 
-    completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo", 
-    messages=[{"role": "user", "content": prompt}]
+    response = openai.Completion.create(
+    model="gpt-3.5-turbo-instruct", 
+    prompt=prompt,
     )
-    return completion["choices"][0]["message"]["content"]
+    return response.choices[0].text
   
   except: 
+    ipdb.set_trace()
     print ("ChatGPT ERROR")
     return "ChatGPT ERROR"
 
@@ -149,7 +151,6 @@ def ChatGPT_safe_generate_response(prompt,
       # print ("---ashdfaf")
       # print (curr_gpt_response)
       # print ("000asdfhia")
-      
       if func_validate(curr_gpt_response, prompt=prompt): 
         return func_clean_up(curr_gpt_response, prompt=prompt)
       
@@ -261,7 +262,6 @@ def safe_generate_response(prompt,
                            verbose=False): 
   if verbose: 
     print (prompt)
-
   for i in range(repeat): 
     curr_gpt_response = GPT_request(prompt, gpt_parameter)
     if func_validate(curr_gpt_response, prompt=prompt): 
@@ -282,7 +282,7 @@ def get_embedding(text, model="text-embedding-ada-002"):
 
 
 if __name__ == '__main__':
-  gpt_parameter = {"engine": "text-davinci-003", "max_tokens": 50, 
+  gpt_parameter = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 50, 
                    "temperature": 0, "top_p": 1, "stream": False,
                    "frequency_penalty": 0, "presence_penalty": 0, 
                    "stop": ['"']}

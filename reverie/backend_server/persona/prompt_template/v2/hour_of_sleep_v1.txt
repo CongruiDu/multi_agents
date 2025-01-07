@@ -1,0 +1,12 @@
+hour_of_sleep_v1.txt
+
+Variables: 
+!<INPUT 0>! -- Identity Stable Set
+!<INPUT 1>! -- Lifestyle
+!<INPUT 2>! -- Persona first names
+
+<commentblockmarker>###</commentblockmarker>
+!<INPUT 0>!
+
+In general, !<INPUT 1>!
+The number of hour that !<INPUT 2>! want to sleep:

@@ -922,8 +922,9 @@ def run_gpt_prompt_pronunciatio(action_description, persona, verbose=False):
   example_output = "🛁🧖‍♀️" ########
   special_instruction = "The value for the output must ONLY contain the emojis." ########
   fail_safe = get_fail_safe()
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True,True)
+  # output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
+  #                                         __chat_func_validate, __chat_func_clean_up, True,True)
+  output = ChatGPT_request(prompt).strip()
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================

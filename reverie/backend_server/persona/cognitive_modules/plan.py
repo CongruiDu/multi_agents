@@ -9,6 +9,7 @@ import math
 import random 
 import sys
 import time
+import ipdb
 sys.path.append('../../')
 
 from global_methods import *
@@ -243,10 +244,18 @@ def generate_action_pronunciatio(act_desp, persona):
     "🧈🍞"
   """
   if debug: print ("GNS FUNCTION: <generate_action_pronunciatio>")
-  try: 
+  # regenerate the pronunciatio until we get a valid response.
+  while True:
     x = run_gpt_prompt_pronunciatio(act_desp, persona)[0]
-  except: 
-    x = "🙂"
+    if x: 
+      return x
+    else: 
+      print ("ERROR: <generate_action_pronunciatio> failed. Retrying...")
+      continue
+  # try: 
+  #   x = run_gpt_prompt_pronunciatio(act_desp, persona)[0]
+  # except: 
+  #   x = "🙂"
 
   if not x: 
     return "🙂"
@@ -531,7 +540,6 @@ def _long_term_planning(persona, new_day):
   elif new_day == False:
     persona.scratch.daily_req = generate_next_activity_plan(persona, 
                                                           wake_up_hour,bedtime)
-    ipdb.set_trace()
   # Based on the daily_req, we create an hourly schedule for the persona, 
   # which is a list of todo items with a time duration (in minutes) that 
   # add up to 24 hours.
@@ -544,7 +552,7 @@ def _long_term_planning(persona, new_day):
 
   # Added March 4 -- adding plan to the memory.
   thought = f"This is {persona.scratch.name}'s plan for {persona.scratch.curr_time.strftime('%A %B %d')}:"
-  for i in persona.scratch.daily_req: 
+  for i in persona.scratch.curr_plan: 
     thought += f" {i},"
   thought = thought[:-1] + "."
   created = persona.scratch.curr_time
@@ -1009,7 +1017,7 @@ def plan(persona, maze, personas, new_day, retrieved):
   
   
   # PART 2: If the current action has expired, we want to create a new plan.
-  if persona.scratch.act_check_finished(): 
+  if persona.scratch.act_check_finished(): # whether should not have this condition
     _determine_action(persona, maze)
 
   # PART 3: If you perceived an event that needs to be responded to (saw 

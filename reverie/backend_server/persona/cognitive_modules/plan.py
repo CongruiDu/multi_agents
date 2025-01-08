@@ -270,7 +270,15 @@ def generate_action_event_triple(act_desp, persona):
 
 def generate_act_obj_desc(act_game_object, act_desp, persona): 
   if debug: print ("GNS FUNCTION: <generate_act_obj_desc>")
-  return run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona)[0]
+  # retry until we get a valid response.
+  while True:
+    x = run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona)[0]
+    if x: 
+      return x
+    else: 
+      print ("ERROR: <generate_act_obj_desc> failed. Retrying...")
+      continue
+  # return run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona)[0]
 
 
 def generate_act_obj_event_triple(act_game_object, act_obj_desc, persona): 
@@ -516,11 +524,14 @@ def _long_term_planning(persona, new_day):
   elif new_day == "New day":
     persona.scratch.clear_curr_plan()
     revise_identity(persona)
-
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - TODO
     # We need to create a new daily_req here...
     persona.scratch.daily_req = persona.scratch.daily_req
-
+  
+  elif new_day == False:
+    persona.scratch.daily_req = generate_next_activity_plan(persona, 
+                                                          wake_up_hour,bedtime)
+    ipdb.set_trace()
   # Based on the daily_req, we create an hourly schedule for the persona, 
   # which is a list of todo items with a time duration (in minutes) that 
   # add up to 24 hours.
@@ -986,7 +997,17 @@ def plan(persona, maze, personas, new_day, retrieved):
   # PART 1: Generate the hourly schedule. 
   if not persona.scratch.is_busy: 
     _long_term_planning(persona, new_day)
+    persona.scratch.is_busy = True
 
+    next_activity=persona.scratch.f_daily_schedule_hourly_org[-1]
+    persona.scratch.busy_until = (persona.scratch.curr_time 
+                                  + datetime.timedelta(minutes=next_activity[1]))
+    print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
+    ipdb.set_trace()
+  if persona.scratch.curr_time >= persona.scratch.busy_until:
+    persona.scratch.is_busy = False
+  
+  
   # PART 2: If the current action has expired, we want to create a new plan.
   if persona.scratch.act_check_finished(): 
     _determine_action(persona, maze)

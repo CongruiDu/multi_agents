@@ -36,6 +36,8 @@ class Scratch:
     # If the persona is currenty busy or not.
     self.is_busy = False
     
+    self.busy_until = None
+    
     # THE CORE IDENTITY OF THE PERSONA 
     # Base information about the persona.
     self.name = None

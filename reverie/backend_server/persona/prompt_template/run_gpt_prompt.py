@@ -178,17 +178,27 @@ def run_gpt_prompt_daily_plan(persona,
 
     # Step 1: Remove unnecessary whitespace
     cleaned_response = gpt_response.strip()
+    pattern = r"\{(.*?)\}"
+    cleaned_response = re.findall(pattern, text, flags=re.DOTALL)
     
     cleaned_response = cleaned_response.lower()
     current_time = persona.scratch.curr_time.strftime("%I:%M %p")
 
     # Step 2: Attempt to parse the response into a dictionary if it looks like one
     try:
-        if cleaned_response.startswith("{") and cleaned_response.endswith("}"):
+        if cleaned_response.startswith("{") and (cleaned_response.endswith("}") or cleaned_response.endswith("<eos>")):
+            if "'s " in cleaned_response and "\\" not in cleaned_response :
+              cleaned_response = cleaned_response.replace("'s", "\\'s")
+            if '<eos>' in cleaned_response: 
+              cleaned_response = cleaned_response.replace('<eos>', '')
+            if '{\\' in cleaned_response:
+              cleaned_response = cleaned_response.replace('{\\', '{')
             data = ast.literal_eval(cleaned_response)
         else:
+            ipdb.set_trace()
             return ["Response is not in a dictionary format."]
     except (ValueError, SyntaxError):
+        ipdb.set_trace()
         return ["Could not parse response into a dictionary."]
 
     # Step 3: Transform the dictionary into the desired output format
@@ -215,24 +225,32 @@ def run_gpt_prompt_daily_plan(persona,
           'go to bed at 11:00 pm'] 
     return fs
 
+  wake_up_time = f"{wake_up_hour}:00 am"
+  # if the current time is not the wake up time, then we need to sleeping to the plan
+  # compare the hour and minute of the current time with the wake up time
 
-  
+      
+    
   gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 500, 
-               "temperature": 1, "top_p": 1, "stream": False,
-               "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
+              "temperature": 1, "top_p": 1, "stream": False,
+              "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v2/next_event_planning_v1.txt"
   prompt_input = create_prompt_input(persona, wake_up_hour, test_input)
   prompt = generate_prompt(prompt_input, prompt_template)
-
   fail_safe = get_fail_safe()
+  if (persona.scratch.curr_time.hour, persona.scratch.curr_time.minute) < (wake_up_hour, 0):
+    output=[f"sleep from {persona.scratch.curr_time.strftime('%I:%M %p')} to {wake_up_time}"]
+    output[0].lower()
+  else:
   
-  output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
-                                   __func_validate, __func_clean_up)
-  while output == ["Response is not in a dictionary format."] or len(output) != 1 or output == ["Could not parse response into a dictionary."]:
-      print("Regenerating response...")
-      # regenerating
-      output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
+    output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                     __func_validate, __func_clean_up)
+    while output == ["Response is not in a dictionary format."] or len(output) != 1 or output == ["Could not parse response into a dictionary."] or output == ["No response to clean up."]:
+        print("Regenerating response...")
+        # regenerating
+        output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
+                                      __func_validate, __func_clean_up)
+        output[0].lower()
   persona.scratch.append_curr_plan(output)
   # output = ([f"wake up and complete the morning routine at {wake_up_hour}:00 am"]
   #             + output)
@@ -2391,10 +2409,15 @@ def run_gpt_prompt_agent_chat_summarize_relationship(persona, target_persona, st
   example_output = 'Jane Doe is working on a project' ########
   special_instruction = 'The output should be a string that responds to the question.' ########
   fail_safe = get_fail_safe() ########
+  if 'What do they feel or know about each other?' in prompt:
+    ipdb.set_trace()
   output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
+                                          __chat_func_validate, __chat_func_clean_up,relation=True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  else:
+    ipdb.set_trace()
+
   # ChatGPT Plugin ===========================================================
 
 

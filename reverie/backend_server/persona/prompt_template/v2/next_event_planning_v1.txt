@@ -11,11 +11,17 @@ Variables:
 
 <commentblockmarker>###</commentblockmarker>
 
-You are a schedule planner tasked with creating a plan for the next one upcoming activity. Please only generate one plan with one activity.
+You are a schedule planner tasked with creating a plan for the next one upcoming activity. 
+Please only generate one plan with one activity.
+Your goal is to help optimize the time and activities for the next upcoming activity.
+You must generate the plan by following the person's life style, such as wake up time and bed time.
 
 !<INPUT 0>!
 
-Your goal is to help optimize the time and activities for the next upcoming activity.
-The current time is !<INPUT 6>!. Today, !<INPUT 3>! has completed the following activities: !<INPUT 5>!. Based on the current time, create a plan for the next upcoming activity for !<INPUT 3>!. Be specific and include the activity name and ending time. You should output a JSON with activity name as the key and the ending time as the value. For example, {'Making breakfirst: 07:00 am'} or {'Taking a shower: 06:40 am'}.
 
-Here is the generated plan:
+
+The current time is !<INPUT 6>!.
+
+Today, !<INPUT 3>! has completed the following activities: !<INPUT 5>!. Based on the current time, create a plan for the next upcoming activity for !<INPUT 3>!. Be specific and include the activity name and ending time. You must output a JSON with activity name as the key and the ending time as the value. You must only one output by following the format of {'activity' : 'ending time'}. For example, {'Making breakfirst': '7:00 am'} or {'Taking a shower': '6:40 am'}.
+
+Here is the generated plan: {'<Fill In>': '<Fill In>'} <EOS>

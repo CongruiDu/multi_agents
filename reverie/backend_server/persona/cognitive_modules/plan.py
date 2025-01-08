@@ -545,7 +545,10 @@ def _long_term_planning(persona, new_day):
   # add up to 24 hours.
   # persona.scratch.f_daily_schedule = generate_hourly_schedule(persona, 
   #                                                             wake_up_hour)
-  persona.scratch.f_daily_schedule = convert_event_to_minutes(persona.scratch.daily_req)
+  try:
+    persona.scratch.f_daily_schedule = convert_event_to_minutes(persona.scratch.daily_req)
+  except:
+    ipdb.set_trace()
   persona.scratch.f_daily_schedule_hourly_org = (persona.scratch
                                                    .f_daily_schedule[:])
 
@@ -561,6 +564,7 @@ def _long_term_planning(persona, new_day):
   keywords = set(["plan"])
   thought_poignancy = 5
   thought_embedding_pair = (thought, get_embedding(thought))
+  ipdb.set_trace()
   persona.a_mem.add_thought(created, expiration, s, p, o, 
                             thought, keywords, thought_poignancy, 
                             thought_embedding_pair, None)
@@ -656,9 +660,9 @@ def _determine_action(persona, maze):
   print ("------")
 
   # 1440
-  x_emergency = 0
-  for i in persona.scratch.f_daily_schedule: 
-    x_emergency += i[1]
+  # x_emergency = 0
+  # for i in persona.scratch.f_daily_schedule: 
+  #   x_emergency += i[1]
   # print ("x_emergency", x_emergency)
 
   # if 1440 - x_emergency > 0: 
@@ -666,8 +670,11 @@ def _determine_action(persona, maze):
   # persona.scratch.f_daily_schedule += [["No Plan", 1440 - x_emergency]]
   
 
-
-  act_desp, act_dura = persona.scratch.f_daily_schedule[-1] 
+  try:
+    act_desp, act_dura = persona.scratch.f_daily_schedule[-1] 
+  except:
+    ipdb.set_trace()
+    
 
 
 
@@ -1011,7 +1018,7 @@ def plan(persona, maze, personas, new_day, retrieved):
     persona.scratch.busy_until = (persona.scratch.curr_time 
                                   + datetime.timedelta(minutes=next_activity[1]))
     print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
-    ipdb.set_trace()
+    print(f'##########################{persona.scratch.curr_plan}##################################')
   if persona.scratch.curr_time >= persona.scratch.busy_until:
     persona.scratch.is_busy = False
   

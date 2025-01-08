@@ -12,6 +12,7 @@ sys.path.append('../../')
 
 import json
 import datetime
+import ipdb
 
 from global_methods import *
 
@@ -200,6 +201,7 @@ class AssociativeMemory:
                         description, keywords, poignancy, 
                         embedding_pair, filling):
     # Setting up the node ID and counts.
+    ipdb.set_trace()
     node_count = len(self.id_to_node.keys()) + 1
     type_count = len(self.seq_thought) + 1
     node_type = "thought"

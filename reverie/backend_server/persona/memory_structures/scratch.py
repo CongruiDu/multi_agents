@@ -7,6 +7,7 @@ Description: Defines the short-term memory module for generative agents.
 import datetime
 import json
 import sys
+import ipdb
 sys.path.append('../../')
 
 from global_methods import *
@@ -29,6 +30,9 @@ class Scratch:
     self.curr_tile = None
     # Perceived world daily requirement. 
     self.daily_plan_req = None
+    
+    # Simulation start time
+    self.start_time = None
 
     # Current plan for the day
     self.curr_plan = []

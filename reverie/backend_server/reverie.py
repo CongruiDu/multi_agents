@@ -79,6 +79,7 @@ class ReverieServer:
     # progresses (that is, everytime curr_env_file is recieved). 
     self.curr_time = datetime.datetime.strptime(reverie_meta['curr_time'], 
                                                 "%B %d, %Y, %H:%M:%S")
+    
     # <sec_per_step> denotes the number of seconds in game time that each 
     # step moves foward. 
     self.sec_per_step = reverie_meta['sec_per_step']
@@ -301,6 +302,11 @@ class ReverieServer:
     # So we need to keep track of which event we added. 
     # <game_obj_cleanup> is used for that. 
     game_obj_cleanup = dict()
+    
+    # Assigne the start time to every persona's scratch.
+    for persona_name, persona in self.personas.items():
+      persona.scratch.start_time = self.curr_time
+      
 
     # The main while loop of Reverie. 
     while (True): 

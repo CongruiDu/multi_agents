@@ -523,7 +523,7 @@ def _long_term_planning(persona, new_day):
   # day in broad strokes.
 
 
-  if new_day == "First day": 
+  if new_day == "First day" or new_day == False: 
     # Bootstrapping the daily plan for the start of then generation:
     # if this is the start of generation (so there is no previous day's 
     # daily requirement, or if we are on a new day, we want to create a new
@@ -535,9 +535,6 @@ def _long_term_planning(persona, new_day):
     revise_identity(persona)
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - TODO
     # We need to create a new daily_req here...
-    persona.scratch.daily_req = persona.scratch.daily_req
-  
-  elif new_day == False:
     persona.scratch.daily_req = generate_next_activity_plan(persona, 
                                                           wake_up_hour,bedtime)
   # Based on the daily_req, we create an hourly schedule for the persona, 
@@ -546,11 +543,12 @@ def _long_term_planning(persona, new_day):
   # persona.scratch.f_daily_schedule = generate_hourly_schedule(persona, 
   #                                                             wake_up_hour)
   try:
-    persona.scratch.f_daily_schedule = convert_event_to_minutes(persona.scratch.daily_req)
+    persona.scratch.f_daily_schedule_append(convert_event_to_minutes(persona.scratch.daily_req)[-1])## whether need to append the plan ---------TODO
   except:
     ipdb.set_trace()
   persona.scratch.f_daily_schedule_hourly_org = (persona.scratch
                                                    .f_daily_schedule[:])
+  print(f"++++++++++++++++++++++++++++++++++{persona.scratch.f_daily_schedule}++++++++++++++++++++++++++++++++++++++++++++++")
 
 
   # Added March 4 -- adding plan to the memory.
@@ -564,7 +562,6 @@ def _long_term_planning(persona, new_day):
   keywords = set(["plan"])
   thought_poignancy = 5
   thought_embedding_pair = (thought, get_embedding(thought))
-  ipdb.set_trace()
   persona.a_mem.add_thought(created, expiration, s, p, o, 
                             thought, keywords, thought_poignancy, 
                             thought_embedding_pair, None)
@@ -604,7 +601,7 @@ def _determine_action(persona, maze):
     elif "sleeping" in act_desp or "asleep" in act_desp or "in bed" in act_desp:
       return False
     elif "sleep" in act_desp or "bed" in act_desp: 
-      if act_dura > 60: 
+      if act_dura >= 60: 
         return False
     return True
 
@@ -671,9 +668,9 @@ def _determine_action(persona, maze):
   
 
   try:
-    act_desp, act_dura = persona.scratch.f_daily_schedule[-1] 
+    act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index] 
   except:
-    ipdb.set_trace()
+    act_desp, act_dura = persona.scratch.f_daily_schedule[-1] 
     
 
 
@@ -1019,12 +1016,13 @@ def plan(persona, maze, personas, new_day, retrieved):
                                   + datetime.timedelta(minutes=next_activity[1]))
     print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
     print(f'##########################{persona.scratch.curr_plan}##################################')
+    _determine_action(persona, maze)
   if persona.scratch.curr_time >= persona.scratch.busy_until:
     persona.scratch.is_busy = False
   
   
   # PART 2: If the current action has expired, we want to create a new plan.
-  if persona.scratch.act_check_finished(): # whether should not have this condition
+  if persona.scratch.act_check_finished() and (persona.scratch.curr_time + datetime.timedelta(seconds=10)) < persona.scratch.busy_until:
     _determine_action(persona, maze)
 
   # PART 3: If you perceived an event that needs to be responded to (saw 

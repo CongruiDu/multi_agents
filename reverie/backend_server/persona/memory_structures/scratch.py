@@ -341,16 +341,9 @@ class Scratch:
     """
     # We first calculate teh number of minutes elapsed today. 
     today_min_elapsed = 0
-    today_min_elapsed += self.curr_time.hour * 60
-    today_min_elapsed += self.curr_time.minute
+    today_min_elapsed += ((self.curr_time.hour - self.start_time.hour) * 60 )
+    today_min_elapsed += (self.curr_time.minute - self.start_time.minute)
     today_min_elapsed += advance
-
-    x = 0
-    for task, duration in self.f_daily_schedule: 
-      x += duration
-    x = 0
-    for task, duration in self.f_daily_schedule_hourly_org: 
-      x += duration
 
     # We then calculate the current index based on that. 
     curr_index = 0
@@ -492,6 +485,9 @@ class Scratch:
               self.act_event[1], 
               self.act_event[2],
               self.act_description)
+  
+  def f_daily_schedule_append(self,item):
+    self.f_daily_schedule.append(item)
 
 
   def get_curr_obj_event_and_desc(self): 

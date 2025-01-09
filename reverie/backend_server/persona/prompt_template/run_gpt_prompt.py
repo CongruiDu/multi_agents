@@ -103,7 +103,7 @@ def run_gpt_prompt_go_to_bed_hour(persona, test_input=None, verbose=False):
     return prompt_input
 
   def __func_clean_up(gpt_response, prompt=""):
-    cr = int(gpt_response.strip().lower().split("am")[0])
+    cr = int(gpt_response.strip().lower().split("pm")[0])
     return cr
   
   def __func_validate(gpt_response, prompt=""): 
@@ -178,10 +178,10 @@ def run_gpt_prompt_daily_plan(persona,
 
     # Step 1: Remove unnecessary whitespace
     cleaned_response = gpt_response.strip()
-    pattern = r"\{(.*?)\}"
-    cleaned_response = re.findall(pattern, text, flags=re.DOTALL)
+    pattern = r"\{[^}]*\}"
+    cleaned_response = re.findall(pattern, cleaned_response)
     
-    cleaned_response = cleaned_response.lower()
+    cleaned_response = cleaned_response[0].lower()
     current_time = persona.scratch.curr_time.strftime("%I:%M %p")
 
     # Step 2: Attempt to parse the response into a dictionary if it looks like one
@@ -246,6 +246,7 @@ def run_gpt_prompt_daily_plan(persona,
     output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                     __func_validate, __func_clean_up)
     while output == ["Response is not in a dictionary format."] or len(output) != 1 or output == ["Could not parse response into a dictionary."] or output == ["No response to clean up."]:
+        ipdb.set_trace()
         print("Regenerating response...")
         # regenerating
         output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
@@ -943,6 +944,8 @@ def run_gpt_prompt_pronunciatio(action_description, persona, verbose=False):
   # output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
   #                                         __chat_func_validate, __chat_func_clean_up, True,True)
   output = ChatGPT_request(prompt).strip()
+  emoji_regex = re.compile(r'[\U0001F300-\U0001FAFF]+') # this will pick up all emojis and ignore text
+  output = emoji_regex.findall(text)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
@@ -1119,8 +1122,14 @@ def run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona, verbose=Fals
   fail_safe = get_fail_safe(act_game_object) ########
   output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
                                           __chat_func_validate, __chat_func_clean_up, True)
+  while output == False:
+    output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
+                                            __chat_func_validate, __chat_func_clean_up, True)
+    print ("vhbuhblhuivgybhbh as DEBUG 7") ########
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  else:
+    ipdb.set_trace()
   # ChatGPT Plugin ===========================================================
 
 

@@ -74,6 +74,7 @@ def ChatGPT_request(prompt):
     response = openai.Completion.create(
     model="gpt-3.5-turbo-instruct", 
     prompt=prompt,
+    max_tokens= 150,
     )
     return response.choices[0].text
   
@@ -130,8 +131,7 @@ def ChatGPT_safe_generate_response(prompt,
                                    func_validate=None,
                                    func_clean_up=None,
                                    verbose=False,
-                                   pron=False,
-                                   relation=False): 
+                                   pron=False): 
   # prompt = 'GPT-3 Prompt:\n"""\n' + prompt + '\n"""\n'
   prompt = '"""\n' + prompt + '\n"""\n'
   prompt += f"Output the response to the prompt above in json. {special_instruction}\n"
@@ -155,8 +155,6 @@ def ChatGPT_safe_generate_response(prompt,
       # print ("000asdfhia")
       if pron==True:
         return curr_gpt_response
-      if relation==True:
-        ipdb.set_trace()
       if func_validate(curr_gpt_response, prompt=prompt): 
         print(f'*************------------------------------------{curr_gpt_response}---------------------------------------------***********')
         return func_clean_up(curr_gpt_response, prompt=prompt)

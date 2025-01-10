@@ -399,6 +399,7 @@ def generate_new_decomp_schedule(persona, inserted_act, inserted_act_dur,  start
   truncated_fin = False 
 
   print ("DEBUG::: ", persona.scratch.name)
+  ipdb.set_trace()
   for act, dur in p.scratch.f_daily_schedule: 
     if (dur_sum >= start_hour * 60) and (dur_sum < end_hour * 60): 
       main_act_dur += [[act, dur]]
@@ -420,8 +421,10 @@ def generate_new_decomp_schedule(persona, inserted_act, inserted_act_dur,  start
 
   persona_name = persona.name 
   main_act_dur = main_act_dur
-
-  x = truncated_act_dur[-1][0].split("(")[0].strip() + " (on the way to " + truncated_act_dur[-1][0].split("(")[-1][:-1] + ")"
+  try:
+    x = truncated_act_dur[-1][0].split("(")[0].strip() + " (on the way to " + truncated_act_dur[-1][0].split("(")[-1][:-1] + ")"
+  except:
+    ipdb.set_trace()
   truncated_act_dur[-1][0] = x 
 
   if "(" in truncated_act_dur[-1][0]: 
@@ -865,38 +868,55 @@ def _create_react(persona, inserted_act, inserted_act_dur,
                   act_pronunciatio, act_obj_description, act_obj_pronunciatio, 
                   act_obj_event, act_start_time=None): 
   p = persona 
-
-  min_sum = 0
+  world_start_min = (persona.scratch.start_time.hour * 60) + (persona.scratch.start_time.minute)
+  min_sum = world_start_min
   for i in range (p.scratch.get_f_daily_schedule_hourly_org_index()): 
     min_sum += p.scratch.f_daily_schedule_hourly_org[i][1]
   start_hour = int (min_sum/60)
+  
+  # Original Code Below:
+    # ---------------------------------------
+    # try:
+    #   if (p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] >= 120):
+    #     end_hour = start_hour + p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1]/60
 
-  if (p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] >= 120):
-    end_hour = start_hour + p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1]/60
+    #   elif (p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] + 
+    #       p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()+1][1]): 
+    #     end_hour = start_hour + ((p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] + 
+    #               p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()+1][1])/60)
 
-  elif (p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] + 
-      p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()+1][1]): 
-    end_hour = start_hour + ((p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()][1] + 
-              p.scratch.f_daily_schedule_hourly_org[p.scratch.get_f_daily_schedule_hourly_org_index()+1][1])/60)
-
-  else: 
-    end_hour = start_hour + 2
-  end_hour = int(end_hour)
-
-  dur_sum = 0
+    #   else: 
+    #     end_hour = start_hour + 2
+    #   end_hour = int(end_hour)
+    # except:
+    #   ipdb.set_trace()
+    # ---------------------------------------
+  end_min_sum = 0
+  end_min_sum += chatting_end_time.hour * 60
+  end_min_sum += chatting_end_time.minute
+  dur_sum = world_start_min
+  end_hour = int (end_min_sum/60)
   count = 0 
   start_index = None
   end_index = None
   for act, dur in p.scratch.f_daily_schedule: 
-    if dur_sum >= start_hour * 60 and start_index == None:
+    if start_index != None and end_index != None:
+      break
+    if dur_sum >= min_sum and start_index == None:
       start_index = count
-    if dur_sum >= end_hour * 60 and end_index == None: 
+    if dur_sum >= end_min_sum and end_index == None: 
       end_index = count
     dur_sum += dur
     count += 1
-
-  ret = generate_new_decomp_schedule(p, inserted_act, inserted_act_dur, 
-                                       start_hour, end_hour)
+  
+  if start_index == end_index:
+    end_index += 1
+    
+  ipdb.set_trace()
+  # ret = generate_new_decomp_schedule(p, inserted_act, inserted_act_dur, 
+  #                                      start_hour, end_hour)
+  ret = [[inserted_act, inserted_act_dur]]
+    
   p.scratch.f_daily_schedule[start_index:end_index] = ret
   p.scratch.add_new_action(act_address,
                            inserted_act_dur,
@@ -1022,7 +1042,7 @@ def plan(persona, maze, personas, new_day, retrieved):
   
   
   # PART 2: If the current action has expired, we want to create a new plan.
-  if persona.scratch.act_check_finished() and (persona.scratch.curr_time + datetime.timedelta(seconds=10)) < persona.scratch.busy_until:
+  if persona.scratch.act_check_finished() and (persona.scratch.curr_time < persona.scratch.busy_until):
     _determine_action(persona, maze)
 
   # PART 3: If you perceived an event that needs to be responded to (saw 

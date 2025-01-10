@@ -183,6 +183,11 @@ def run_gpt_prompt_daily_plan(persona,
     
     cleaned_response = cleaned_response[0].lower()
     current_time = persona.scratch.curr_time.strftime("%I:%M %p")
+    pattern = r"(?<!['\"])(\d{1,2}:\d{2}\s?(am|pm))(?!['\"])"
+
+    # Wrap any matched times in single quotes if they aren't already in quotes
+    cleaned_response = re.sub(pattern, r"'\1'", cleaned_response)
+    
 
     # Step 2: Attempt to parse the response into a dictionary if it looks like one
     try:
@@ -237,16 +242,31 @@ def run_gpt_prompt_daily_plan(persona,
   prompt_template = "persona/prompt_template/v2/next_event_planning_v1.txt"
   prompt_input = create_prompt_input(persona, wake_up_hour, test_input)
   prompt = generate_prompt(prompt_input, prompt_template)
+  
+  # calculate the sum of the durations of the activities in current plan
+  sum_of_durations = 0
+  for activity in persona.scratch.f_daily_schedule:
+    sum_of_durations+=activity[1]
+    
+  plan_completed_hours = (persona.scratch.start_time + datetime.timedelta(minutes=sum_of_durations)).hour
+  plan_completed_minutes = (persona.scratch.start_time + datetime.timedelta(minutes=sum_of_durations)).minute
+  
   fail_safe = get_fail_safe()
+
   if (persona.scratch.curr_time.hour, persona.scratch.curr_time.minute) < (wake_up_hour, 0):
-    output=[f"sleep from {persona.scratch.curr_time.strftime('%I:%M %p')} to {wake_up_time}"]
+    # if the current time is before the wake up time, then we need to add sleeping to the plan
+    output=[f"sleeping from {persona.scratch.curr_time.strftime('%I:%M %p')} to {wake_up_time}"]
+    output[0].lower()
+  
+  elif (persona.scratch.curr_time.hour, persona.scratch.curr_time.minute) >= (int(bedtime), 0) and (plan_completed_hours, plan_completed_minutes) < (bedtime, 0):
+    # if the current time is after the bedtime and there is no plan at bedtime, then we need to add sleeping to the plan
+    output=[f"sleeping from {persona.scratch.curr_time.strftime('%I:%M %p')} to {wake_up_time}"]
     output[0].lower()
   else:
   
     output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                     __func_validate, __func_clean_up)
     while output == ["Response is not in a dictionary format."] or len(output) != 1 or output == ["Could not parse response into a dictionary."] or output == ["No response to clean up."]:
-        ipdb.set_trace()
         print("Regenerating response...")
         # regenerating
         output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
@@ -417,6 +437,16 @@ def run_gpt_prompt_task_decomp(persona,
       
     curr_f_org_index = persona.scratch.get_f_daily_schedule_hourly_org_index()
     all_indices = []
+    completed_plan=''
+    current_time=persona.scratch.start_time
+    for activity in persona.scratch.f_daily_schedule[:-1]:
+      
+      activity_desc=activity[0]
+      activity_dura=activity[1]
+      if persona.scratch.curr_time >= current_time:
+        completed_plan+=f"{current_time.strftime('%I:%M %p')} ~ {(current_time+datetime.timedelta(minutes=activity_dura)).strftime('%I:%M %p')}, {persona.name} is {activity_desc}. \n "
+        current_time+=datetime.timedelta(minutes=activity_dura)
+      
     # if curr_f_org_index > 0: 
     #   all_indices += [curr_f_org_index-1]
     all_indices += [curr_f_org_index]
@@ -461,6 +491,7 @@ def run_gpt_prompt_task_decomp(persona,
     prompt_input += [curr_time_range]
     prompt_input += [duration]
     prompt_input += [persona.scratch.get_str_firstname()]
+    prompt_input += [completed_plan]
     return prompt_input
 
   def __func_clean_up(gpt_response, prompt=""):
@@ -941,11 +972,14 @@ def run_gpt_prompt_pronunciatio(action_description, persona, verbose=False):
   example_output = "🛁🧖‍♀️" ########
   special_instruction = "The value for the output must ONLY contain the emojis." ########
   fail_safe = get_fail_safe()
+  
+  if 'sleep' in action_description:
+    return '😴', ['😴', prompt, gpt_param, prompt_input, fail_safe]
   # output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
   #                                         __chat_func_validate, __chat_func_clean_up, True,True)
   output = ChatGPT_request(prompt).strip()
   emoji_regex = re.compile(r'[\U0001F300-\U0001FAFF]+') # this will pick up all emojis and ignore text
-  output = emoji_regex.findall(text)
+  output = emoji_regex.findall(output)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
@@ -2418,10 +2452,8 @@ def run_gpt_prompt_agent_chat_summarize_relationship(persona, target_persona, st
   example_output = 'Jane Doe is working on a project' ########
   special_instruction = 'The output should be a string that responds to the question.' ########
   fail_safe = get_fail_safe() ########
-  if 'What do they feel or know about each other?' in prompt:
-    ipdb.set_trace()
   output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up,relation=True)
+                                          __chat_func_validate, __chat_func_clean_up)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   else:

@@ -370,8 +370,8 @@ class Scratch:
     """
     # We first calculate teh number of minutes elapsed today. 
     today_min_elapsed = 0
-    today_min_elapsed += self.curr_time.hour * 60
-    today_min_elapsed += self.curr_time.minute
+    today_min_elapsed += ((self.curr_time.hour - self.start_time.hour) * 60 )
+    today_min_elapsed += (self.curr_time.minute - self.start_time.minute)
     today_min_elapsed += advance
     # We then calculate the current index based on that. 
     curr_index = 0

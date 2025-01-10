@@ -9,6 +9,7 @@ Variables:
 !<INPUT 5>! -- curr time range
 !<INPUT 6>! -- Current action duration in min
 !<INPUT 7>! -- Persona first names
+!<INPUT 8>! -- Completed activities
 
 <commentblockmarker>###</commentblockmarker>
 Describe subtasks in 5 min increments. 
@@ -35,5 +36,7 @@ In 5 min increments, list the subtasks Kelly does when Kelly is working on the n
 ---
 !<INPUT 0>!
 !<INPUT 1>!
+The following are a detailed schedule of what and when !<INPUT 2>! has done today:
+!<INPUT 8>!
 In 5 min increments, list the subtasks !<INPUT 2>! does when !<INPUT 3>! is !<INPUT 4>! from !<INPUT 5>! (total duration in minutes !<INPUT 6>!): 
 1) !<INPUT 7>! is

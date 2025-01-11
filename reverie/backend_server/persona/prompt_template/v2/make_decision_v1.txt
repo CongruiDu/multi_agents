@@ -1,0 +1,23 @@
+make_decision_v1.txt
+
+Variables: 
+!<INPUT 0>! -- Current plan
+!<INPUT 1>! -- Current time
+!<INPUT 2>! -- Persona name
+!<INPUT 3>! -- Retrieved Info
+
+
+
+<commentblockmarker>###</commentblockmarker>
+You are a professional strategist who is good at making an apporpriate decision on still following a given plan.
+You must pick a option from ["Yes", "No"]
+
+Current time: !<INPUT 1>!
+
+Below is !<INPUT 2>!'s plan:
+!<INPUT 0>!
+
+In general, !<INPUT 3>!
+Decide whether to continue following the plan by outputing "Yes" or "No".
+
+Decision:

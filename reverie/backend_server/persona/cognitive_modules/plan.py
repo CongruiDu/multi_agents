@@ -41,7 +41,7 @@ def generate_go_to_bed_hour(persona):
   if debug: print ("GNS FUNCTION: <generate_go_to_bed_hour>")
   return int(run_gpt_prompt_go_to_bed_hour(persona)[0])
 
-def generate_next_activity_plan(persona, wake_up_hour,bedtime): 
+def generate_next_activity_plan(persona, wake_up_hour,bedtime, battle_world = False): 
   """
   Generates the daily plan for the persona. 
   Basically the long term planning that spans a day. Returns a list of actions
@@ -70,48 +70,48 @@ def generate_next_activity_plan(persona, wake_up_hour,bedtime):
      'have dinner at 6:00 pm', 'watch TV from 7:00 pm to 8:00 pm']
   """
   if debug: print ("GNS FUNCTION: <generate_next_activity_plan>")
-  return run_gpt_prompt_daily_plan(persona, wake_up_hour,bedtime)[0]
+  return run_gpt_prompt_next_plan(persona, wake_up_hour,bedtime)[0]
 
 
-def generate_hourly_schedule(persona, wake_up_hour): 
-  """
-  Based on the daily req, creates an hourly schedule -- one hour at a time. 
-  The form of the action for each of the hour is something like below: 
-  "sleeping in her bed"
+# def generate_hourly_schedule(persona, wake_up_hour): 
+#   """
+#   Based on the daily req, creates an hourly schedule -- one hour at a time. 
+#   The form of the action for each of the hour is something like below: 
+#   "sleeping in her bed"
   
-  The output is basically meant to finish the phrase, "x is..."
+#   The output is basically meant to finish the phrase, "x is..."
 
-  Persona state: identity stable set, daily_plan
+#   Persona state: identity stable set, daily_plan
 
-  INPUT: 
-    persona: The Persona class instance 
-    persona: Integer form of the wake up hour for the persona.  
-  OUTPUT: 
-    a list of activities and their duration in minutes: 
-  EXAMPLE OUTPUT: 
-    [['sleeping', 360], ['waking up and starting her morning routine', 60], 
-     ['eating breakfast', 60],..
-  """
-  if debug: print ("GNS FUNCTION: <generate_hourly_schedule>")
+#   INPUT: 
+#     persona: The Persona class instance 
+#     persona: Integer form of the wake up hour for the persona.  
+#   OUTPUT: 
+#     a list of activities and their duration in minutes: 
+#   EXAMPLE OUTPUT: 
+#     [['sleeping', 360], ['waking up and starting her morning routine', 60], 
+#      ['eating breakfast', 60],..
+#   """
+#   if debug: print ("GNS FUNCTION: <generate_hourly_schedule>")
 
-  hour_str = ["00:00 AM", "01:00 AM", "02:00 AM", "03:00 AM", "04:00 AM", 
-              "05:00 AM", "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", 
-              "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", 
-              "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM",
-              "08:00 PM", "09:00 PM", "10:00 PM", "11:00 PM"]
-  n_m1_activity = []
-  diversity_repeat_count = 3
-  for i in range(diversity_repeat_count): 
-    n_m1_activity_set = set(n_m1_activity)
-    if len(n_m1_activity_set) < 5: 
-      n_m1_activity = []
-      for count, curr_hour_str in enumerate(hour_str): 
-        if wake_up_hour > 0: 
-          n_m1_activity += ["sleeping"]
-          wake_up_hour -= 1
-        else: 
-          n_m1_activity += [run_gpt_prompt_generate_hourly_schedule(
-                          persona, curr_hour_str, n_m1_activity, hour_str)[0]]
+#   hour_str = ["00:00 AM", "01:00 AM", "02:00 AM", "03:00 AM", "04:00 AM", 
+#               "05:00 AM", "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", 
+#               "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", 
+#               "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM",
+#               "08:00 PM", "09:00 PM", "10:00 PM", "11:00 PM"]
+#   n_m1_activity = []
+#   diversity_repeat_count = 3
+#   for i in range(diversity_repeat_count): 
+#     n_m1_activity_set = set(n_m1_activity)
+#     if len(n_m1_activity_set) < 5: 
+#       n_m1_activity = []
+#       for count, curr_hour_str in enumerate(hour_str): 
+#         if wake_up_hour > 0: 
+#           n_m1_activity += ["sleeping"]
+#           wake_up_hour -= 1
+#         else: 
+#           n_m1_activity += [run_gpt_prompt_generate_hourly_schedule(
+#                           persona, curr_hour_str, n_m1_activity, hour_str)[0]]
   
   # Step 1. Compressing the hourly schedule to the following format: 
   # The integer indicates the number of hours. They should add up to 24. 
@@ -360,6 +360,14 @@ def generate_decide_to_talk(init_persona, target_persona, retrieved):
   else: 
     return False
 
+def generate_decision(persona):
+  x = run_gpt_prompt_decision(persona)[0]
+  x = x.lower()
+  if debug: print ("GNS FUNCTION: <generate_decision>")
+  if x == "yes":
+    return True
+  else:
+    return False
 
 def generate_decide_to_react(init_persona, target_persona, retrieved): 
   if debug: print ("GNS FUNCTION: <generate_decide_to_react>")
@@ -551,7 +559,7 @@ def _long_term_planning(persona, new_day):
   # We start by creating the wake up hour for the persona. 
   wake_up_hour = generate_wake_up_hour(persona)
   bedtime = generate_go_to_bed_hour(persona)
-  hour_of_sleep = 12 - bedtime + wake_up_hour
+
 
   # When it is a new day, we start by creating the daily_req of the persona.
   # Note that the daily_req is a list of strings that describe the persona's
@@ -1152,6 +1160,11 @@ def plan(persona, maze, personas, new_day, retrieved):
     print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
     print(f'##########################{persona.scratch.curr_plan}##################################')
     _determine_action(persona, maze)
+  else:
+    decision = generate_decision(persona)
+    if decision != "yes":
+      pass
+      
   if persona.scratch.curr_time >= persona.scratch.busy_until:
     persona.scratch.is_busy = False
   

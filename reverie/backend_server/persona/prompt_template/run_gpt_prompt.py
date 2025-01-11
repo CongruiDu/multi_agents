@@ -131,8 +131,23 @@ def run_gpt_prompt_go_to_bed_hour(persona, test_input=None, verbose=False):
 
     
   return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+def run_gpt_prompt_decision(persona):
+    def create_prompt_input(persona, test_input=None):
+      if test_input: return test_input
+      prompt_input = []
+      prompt_input += [persona.scratch.get_curr_plan()]
 
-def run_gpt_prompt_daily_plan(persona, 
+      return prompt_input
+  gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 50, 
+               "temperature": 0.5, "top_p": 1, "stream": False,
+               "frequency_penalty": 0, "presence_penalty": 0, "stop": ["\n"]}
+  prompt_template = "persona/prompt_template/v2/make_decision.txt"
+  prompt_input = create_prompt_input(persona)
+  prompt = generate_prompt(prompt_input, prompt_template)
+  output = safe_generate_response(prompt, gpt_param, 5)
+  return output, [output, prompt, gpt_param, prompt_input]
+
+def run_gpt_prompt_next_plan(persona, 
                               wake_up_hour, 
                               bedtime,
                               test_input=None, 

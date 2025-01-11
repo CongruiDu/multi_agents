@@ -1,0 +1,11 @@
+summarize_battle_v1.txt
+
+Variables: 
+!<INPUT 0>! -- battle log
+
+<commentblockmarker>###</commentblockmarker>
+Battle Logs: 
+!<INPUT 0>!
+
+Summarize the battle above in one sentence:
+In this battle,

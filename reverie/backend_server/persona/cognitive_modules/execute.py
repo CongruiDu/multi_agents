@@ -6,6 +6,7 @@ Description: This defines the "Act" module for generative agents.
 """
 import sys
 import random
+import ipdb
 sys.path.append('../../')
 
 from global_methods import *
@@ -32,6 +33,7 @@ def execute(persona, maze, personas, plan):
   OUTPUT: 
     execution
   """
+  ipdb.set_trace()
   if "<random>" in plan and persona.scratch.planned_path == []: 
     persona.scratch.act_path_set = False
 
@@ -104,6 +106,7 @@ def execute(persona, maze, personas, plan):
     # headed to the same location on the maze. It is ok if they end up on the 
     # same time, but we try to lower that probability. 
     # We take care of that overlap here.  
+    # 这里尽量让不同的persona去不同的tile
     persona_name_set = set(personas.keys())
     new_target_tiles = []
     for i in target_tiles: 
@@ -132,7 +135,7 @@ def execute(persona, maze, personas, plan):
       curr_path = path_finder(maze.collision_maze, 
                               curr_tile, 
                               i, 
-                              collision_block_id)
+                              collision_block_id) # this function will return a list of coordinates that are the path
       if not closest_target_tile: 
         closest_target_tile = i
         path = curr_path
@@ -149,7 +152,7 @@ def execute(persona, maze, personas, plan):
   # no <planned_path> left, but otherwise, we go to the next tile in the path.
   ret = persona.scratch.curr_tile
   if persona.scratch.planned_path: 
-    ret = persona.scratch.planned_path[0]
+    ret = persona.scratch.planned_path[0] # the value will be the next tile in the path
     persona.scratch.planned_path = persona.scratch.planned_path[1:]
 
   description = f"{persona.scratch.act_description}"

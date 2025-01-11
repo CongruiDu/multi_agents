@@ -169,6 +169,16 @@ class Scratch:
     # destination tile. 
     # e.g., [(50, 10), (49, 10), (48, 10), ...]
     self.planned_path = []
+    
+    #Battle System
+    self.fight = False
+    self.hp = 100
+    self.backpack = []
+    self.team = None
+    self.fighting_with = None
+    self.fight_end_time = None
+    self.fighting_with_buffer = dict()
+    
 
     if check_if_file_exists(f_saved): 
       # If we have a bootstrap file, load that here. 
@@ -177,7 +187,11 @@ class Scratch:
       self.vision_r = scratch_load["vision_r"]
       self.att_bandwidth = scratch_load["att_bandwidth"]
       self.retention = scratch_load["retention"]
-
+      
+      self.hp = scratch_load["hp"]
+      self.backpack = scratch_load["backpack"]
+      self.team = scratch_load["team"]
+      
       if scratch_load["curr_time"]: 
         self.curr_time = datetime.datetime.strptime(scratch_load["curr_time"],
                                                   "%B %d, %Y, %H:%M:%S")
@@ -309,6 +323,16 @@ class Scratch:
     scratch["chatting_with"] = self.chatting_with
     scratch["chat"] = self.chat
     scratch["chatting_with_buffer"] = self.chatting_with_buffer
+    scratch["is_busy"] = self.is_busy
+    scratch["busy_until"] = self.busy_until
+    scratch["fight"] = self.fight
+    scratch["hp"] = self.hp
+    scratch["backpack"] = self.backpack
+    scratch["team"] = self.team
+    scratch["fighting_with"] = self.fighting_with
+    scratch["fight_end_time"] = self.fight_end_time
+    scratch["fighting_with_buffer"] = self.fighting_with_buffer
+    
     if self.chatting_end_time: 
       scratch["chatting_end_time"] = (self.chatting_end_time
                                         .strftime("%B %d, %Y, %H:%M:%S"))
@@ -452,10 +476,23 @@ class Scratch:
   def get_str_currently(self): 
     return self.currently
 
+  def get_battle(self):
+    return self.battle
+  
+  def get_hp(self):
+    return self.hp
+  
+  def get_backpack(self):
+    return self.backpack
 
   def get_str_lifestyle(self): 
     return self.lifestyle
-
+  
+  def get_team(self):
+    return self.team
+  
+  def set_team(self, team):
+    self.team = team
 
   def get_str_daily_plan_req(self): 
     return self.daily_plan_req
@@ -463,8 +500,27 @@ class Scratch:
   def append_curr_plan(self, plan):
     self.curr_plan.append(plan)
   
+  def search_backpack(self, item):
+    for i in self.backpack:
+      if i == item:
+        return True
+    return False
+  
+  def add_item_backpack(self, item):
+    self.backpack.append(item)
+  
+  def remove_item_backpack(self, item):
+    self.backpack.remove(item)
+  
+  def set_battle(self, battle):
+    self.battle = battle
+  
+  def set_hp(self, hp):
+    self.hp = hp
+  
   def clear_curr_plan(self):
     self.curr_plan = []
+  
 
   def get_str_curr_date_str(self): 
     return self.curr_time.strftime("%A %B %d")

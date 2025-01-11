@@ -47,5 +47,8 @@
   "chatting_with_buffer": {}, 
   "chatting_end_time": null,
   "act_path_set": false, 
-  "planned_path": []
+  "planned_path": [],
+  "backpack": ["sword"],
+  "hp": 100,
+  "team": "red"
 }

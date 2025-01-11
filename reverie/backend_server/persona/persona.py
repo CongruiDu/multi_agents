@@ -208,6 +208,7 @@ class Persona:
     # day, whether it is the very first day of the simulation. This is 
     # important because we set up the persona's long term plan at the start of
     # a new day. 
+    ipdb.set_trace()
     new_day = False
     if not self.scratch.curr_time: 
       new_day = "First day"
@@ -215,12 +216,17 @@ class Persona:
           != curr_time.strftime('%A %B %d')):
       new_day = "New day"
     self.scratch.curr_time = curr_time
-
-    # Main cognitive sequence begins here. 
-    perceived = self.perceive(maze)
-    retrieved = self.retrieve(perceived)
-    plan = self.plan(maze, personas, new_day, retrieved)
-    self.reflect()
+    
+    if self.scratch.curr_time.minute % 10 == 0:
+      
+      # Main cognitive sequence begins here. 
+      perceived = self.perceive(maze)
+      retrieved = self.retrieve(perceived)
+      plan = self.plan(maze, personas, new_day, retrieved)
+      self.reflect()
+    else:
+       plan=f"<waiting> {self.scratch.curr_tile[0]} {self.scratch.curr_tile[1]}"
+      
 
     # <execution> is a triple set that contains the following components: 
     # <next_tile> is a x,y coordinate. e.g., (58, 9)

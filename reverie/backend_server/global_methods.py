@@ -207,6 +207,21 @@ def std(list_of_val):
   std = numpy.std(list_of_val)
   return std
 
+def convert_list_to_natrual_txt(plans,start_time):
+  """
+  Converts a list of strings to a natural language text. 
+  ARGS:
+    plan: a list of list where the first item is the description and the second item is its duration.
+    start_time: a datetime object
+  RETURNS: 
+    A natural language text
+  """
+  text = []
+  curr_time = start_time
+  for plan in plans:
+    text.append(plan[0] + " from " + curr_time.strftime("%I:%M %p") + " to " + (curr_time + dt.timedelta(minutes=plan[1])).strftime("%I:%M %p"))
+    curr_time += dt.timedelta(minutes=plan[1])
+  return text 
 
 def copyanything(src, dst):
   """

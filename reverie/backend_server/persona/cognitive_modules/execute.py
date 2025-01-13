@@ -33,7 +33,6 @@ def execute(persona, maze, personas, plan):
   OUTPUT: 
     execution
   """
-  ipdb.set_trace()
   if "<random>" in plan and persona.scratch.planned_path == []: 
     persona.scratch.act_path_set = False
 
@@ -153,7 +152,10 @@ def execute(persona, maze, personas, plan):
   ret = persona.scratch.curr_tile
   if persona.scratch.planned_path: 
     ret = persona.scratch.planned_path[0] # the value will be the next tile in the path
-    persona.scratch.planned_path = persona.scratch.planned_path[1:]
+    try:
+      persona.scratch.planned_path = persona.scratch.planned_path[persona.scratch.speed:] # the next tile in the path base on the speed of the persona
+    except:
+      persona.scratch.planned_path = persona.scratch.planned_path[1:]
 
   description = f"{persona.scratch.act_description}"
   description += f" @ {persona.scratch.act_address}"

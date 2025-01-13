@@ -48,7 +48,13 @@
   "chatting_end_time": null,
   "act_path_set": false, 
   "planned_path": [],
+  "fight": false,
+  "fighting_with": [],
+  "fighting_with_buffer": {},
+  "fight_end_time": null,
   "backpack": ["sword"],
   "hp": 100,
-  "team": "red"
+  "team": "red",
+  "speed": 2
+
 }

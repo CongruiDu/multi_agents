@@ -10,6 +10,7 @@ import random
 import sys
 import time
 import ipdb
+import copy
 sys.path.append('../../')
 
 from global_methods import *
@@ -360,8 +361,8 @@ def generate_decide_to_talk(init_persona, target_persona, retrieved):
   else: 
     return False
 
-def generate_decision(persona):
-  x = run_gpt_prompt_decision(persona)[0]
+def generate_decision(persona,retrieved):
+  x = run_gpt_prompt_decision(persona,retrieved)[0]
   x = x.lower()
   if debug: print ("GNS FUNCTION: <generate_decision>")
   if x == "yes":
@@ -439,7 +440,6 @@ def generate_new_decomp_schedule(persona, inserted_act, inserted_act_dur,  start
   truncated_fin = False 
 
   print ("DEBUG::: ", persona.scratch.name)
-  ipdb.set_trace()
   for act, dur in p.scratch.f_daily_schedule: 
     if (dur_sum >= start_hour * 60) and (dur_sum < end_hour * 60): 
       main_act_dur += [[act, dur]]
@@ -546,7 +546,7 @@ def revise_identity(persona):
   persona.scratch.daily_plan_req = new_daily_req
 
 
-def _long_term_planning(persona, new_day): 
+def _long_term_planning(persona, new_day,resume): 
   """
   Formulates the persona's daily long-term plan if it is the start of a new 
   day. This basically has two components: first, we create the wake-up hour, 
@@ -559,6 +559,7 @@ def _long_term_planning(persona, new_day):
   # We start by creating the wake up hour for the persona. 
   wake_up_hour = generate_wake_up_hour(persona)
   bedtime = generate_go_to_bed_hour(persona)
+  
 
 
   # When it is a new day, we start by creating the daily_req of the persona.
@@ -585,6 +586,11 @@ def _long_term_planning(persona, new_day):
   # add up to 24 hours.
   # persona.scratch.f_daily_schedule = generate_hourly_schedule(persona, 
   #                                                             wake_up_hour)
+  if not resume and persona.scratch.is_busy and not persona.scratch.curr_time == persona.scratch.busy_until:
+    alter_next_plan = generate_next_activity_plan(persona, wake_up_hour,bedtime)
+    persona.scrtach.f_daily_schedule_pop() # remove the last plan item
+    ipdb.set_trace()
+    persona.scratch.daily_req = alter_next_plan
   try:
     persona.scratch.f_daily_schedule_append(convert_event_to_minutes(persona.scratch.daily_req)[-1])## whether need to append the plan ---------TODO
   except:
@@ -668,13 +674,17 @@ def _determine_action(persona, maze):
       if determine_decomp(act_desp, act_dura): 
         persona.scratch.f_daily_schedule[curr_index:curr_index+1] = (
                             generate_task_decomp(persona, act_desp, act_dura))
+        f_daily_schedule_in_txt = convert_list_to_natrual_txt(persona.scratch.f_daily_schedule, persona.scratch.start_time)
+        persona.scratch.curr_plan = f_daily_schedule_in_txt.copy()
     if curr_index_60 + 1 < len(persona.scratch.f_daily_schedule):
       act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index_60+1]
       if act_dura >= 60: 
         if determine_decomp(act_desp, act_dura): 
           persona.scratch.f_daily_schedule[curr_index_60+1:curr_index_60+2] = (
                             generate_task_decomp(persona, act_desp, act_dura))
-
+          ipdb.set_trace()
+          f_daily_schedule_in_txt = convert_list_to_natrual_txt(persona.scratch.f_daily_schedule, persona.scratch.start_time)
+          persona.scratch.curr_plan = f_daily_schedule_in_txt.copy()
   if curr_index_60 < len(persona.scratch.f_daily_schedule):
     # If it is not the first hour of the day, this is always invoked (it is
     # also invoked during the first hour of the day -- to double up so we can
@@ -687,6 +697,9 @@ def _determine_action(persona, maze):
         if determine_decomp(act_desp, act_dura): 
           persona.scratch.f_daily_schedule[curr_index_60:curr_index_60+1] = (
                               generate_task_decomp(persona, act_desp, act_dura))
+          ipdb.set_trace()
+          f_daily_schedule_in_txt = convert_list_to_natrual_txt(persona.scratch.f_daily_schedule, persona.scratch.start_time)
+          persona.scratch.curr_plan = f_daily_schedule_in_txt.copy()
   # * End of Decompose * 
 
   # Generate an <Action> instance from the action description and duration. By
@@ -989,7 +1002,6 @@ def _create_react(persona, inserted_act, inserted_act_dur,
   if start_index == end_index:
     end_index += 1
     
-  ipdb.set_trace()
   # ret = generate_new_decomp_schedule(p, inserted_act, inserted_act_dur, 
   #                                      start_hour, end_hour)
   ret = [[inserted_act, inserted_act_dur]]
@@ -1126,7 +1138,7 @@ def _wait_react(persona, reaction_mode):
     act_address, act_event, chatting_with, chat, chatting_with_buffer, chatting_end_time,
     act_pronunciatio, act_obj_description, act_obj_pronunciatio, act_obj_event)
 
-
+    
 def plan(persona, maze, personas, new_day, retrieved): 
   """
   Main cognitive function of the chain. It takes the retrieved memory and 
@@ -1149,21 +1161,35 @@ def plan(persona, maze, personas, new_day, retrieved):
   OUTPUT 
     The target action address of the persona (persona.scratch.act_address).
   """ 
-  # PART 1: Generate the hourly schedule. 
-  if not persona.scratch.is_busy: 
-    _long_term_planning(persona, new_day)
-    persona.scratch.is_busy = True
+  focused_event = {}
+  retrived_event = ''
+  try:
+    for event in focused_event['events']:
+      retrived_event += event.description + '\n'
+  except:
+    pass
+  if persona.scratch.curr_time.minute % 10 == 0 and persona.scratch.curr_time.second == 0: # every 10 minutes, the persona will make a decision
+    resume = True
+    if persona.scratch.is_busy:
+      resume = generate_decision(persona,retrived_event)
+      print(f'(((((((((((((((((((((((((((((((((((((((((((((({resume}))))))))))))))))))))))))))))))))))))))))))))))')
+    
+    if retrieved.keys(): 
+      focused_event = _choose_retrieved(persona, retrieved)
+    # PART 1: Generate the hourly schedule. 
+    if (not persona.scratch.is_busy) or (persona.scratch.curr_time >= persona.scratch.busy_until) or (not resume): # if the persona is not busy or decide to not follow the current plan, generate a new plan
+      _long_term_planning(persona, new_day,resume)
+      persona.scratch.is_busy = True
 
-    next_activity=persona.scratch.f_daily_schedule_hourly_org[-1]
-    persona.scratch.busy_until = (persona.scratch.curr_time 
-                                  + datetime.timedelta(minutes=next_activity[1]))
-    print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
-    print(f'##########################{persona.scratch.curr_plan}##################################')
-    _determine_action(persona, maze)
-  else:
-    decision = generate_decision(persona)
-    if decision != "yes":
-      pass
+      next_activity=persona.scratch.f_daily_schedule_hourly_org[-1]
+      persona.scratch.busy_until = (persona.scratch.curr_time 
+                                    + datetime.timedelta(minutes=next_activity[1]))
+      ipdb.set_trace()
+      print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
+      print(f'##########################{persona.scratch.curr_plan}##################################')
+      _determine_action(persona, maze)
+    
+    
       
   if persona.scratch.curr_time >= persona.scratch.busy_until:
     persona.scratch.is_busy = False
@@ -1183,8 +1209,7 @@ def plan(persona, maze, personas, new_day, retrieved):
   #                     ["events"] = [<ConceptNode>, ...], 
   #                     ["thoughts"] = [<ConceptNode>, ...]}
   focused_event = False
-  if retrieved.keys(): 
-    focused_event = _choose_retrieved(persona, retrieved)
+
   
   # Step 2: Once we choose an event, we need to determine whether the
   #         persona will take any actions for the perceived event. There are

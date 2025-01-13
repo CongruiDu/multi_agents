@@ -175,9 +175,10 @@ class Scratch:
     self.hp = 100
     self.backpack = []
     self.team = None
-    self.fighting_with = None
+    self.fighting_with = []
     self.fight_end_time = None
     self.fighting_with_buffer = dict()
+    self.speed = 1
     
 
     if check_if_file_exists(f_saved): 
@@ -258,6 +259,16 @@ class Scratch:
 
       self.act_path_set = scratch_load["act_path_set"]
       self.planned_path = scratch_load["planned_path"]
+      
+      self.fight = scratch_load['fight']
+      self.speed = scratch_load['speed']
+      self.fighting_with = scratch_load['fighting_with']
+      self.fight_end_time = scratch_load['fight_end_time']
+      self.fighting_with_buffer = scratch_load['fighting_with_buffer']
+      self.backpack = scratch_load['backpack']
+      self.team = scratch_load['team']
+      
+    
 
 
   def save(self, out_json):
@@ -329,6 +340,7 @@ class Scratch:
     scratch["hp"] = self.hp
     scratch["backpack"] = self.backpack
     scratch["team"] = self.team
+    scratch['speed'] = self.speed
     scratch["fighting_with"] = self.fighting_with
     scratch["fight_end_time"] = self.fight_end_time
     scratch["fighting_with_buffer"] = self.fighting_with_buffer
@@ -544,7 +556,9 @@ class Scratch:
   
   def f_daily_schedule_append(self,item):
     self.f_daily_schedule.append(item)
-
+  
+  def f_daily_schedule_pop(self):
+    self.f_daily_schedule.pop(-1)
 
   def get_curr_obj_event_and_desc(self): 
     if not self.act_address: 

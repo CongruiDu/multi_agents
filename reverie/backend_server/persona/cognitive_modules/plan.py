@@ -315,23 +315,13 @@ def generate_convo(maze, init_persona, target_persona):
   return convo, convo_length
 
 def generate_battle(maze, init_persona, target_persona): 
-  # curr_loc = maze.access_tile(init_persona.scratch.curr_tile)
 
-  # # convo = run_gpt_prompt_create_conversation(init_persona, target_persona, curr_loc)[0]
-  # # convo = agent_chat_v1(maze, init_persona, target_persona)
-  # convo = agent_chat_v2(maze, init_persona, target_persona)
-  # all_utt = ""
+  battle = agent_battle_v1(maze, init_persona, target_persona)
 
-  # for row in convo: 
-  #   speaker = row[0]
-  #   utt = row[1]
-  #   all_utt += f"{speaker}: {utt}\n"
+  battle_length = len(battle) * 5
 
-  # convo_length = math.ceil(int(len(all_utt)/8) / 30)
-
-  # if debug: print ("GNS FUNCTION: <generate_convo>")
-  # return convo, convo_length
-  pass
+  if debug: print ("GNS FUNCTION: <generate_battle>")
+  return battle, battle_length
 
 
 
@@ -588,8 +578,10 @@ def _long_term_planning(persona, new_day,resume):
   #                                                             wake_up_hour)
   if not resume and persona.scratch.is_busy and not persona.scratch.curr_time == persona.scratch.busy_until:
     alter_next_plan = generate_next_activity_plan(persona, wake_up_hour,bedtime)
-    persona.scrtach.f_daily_schedule_pop() # remove the last plan item
-    ipdb.set_trace()
+    try:
+      persona.scratch.f_daily_schedule_pop() # remove the last plan item
+    except:
+      ipdb.set_trace()
     persona.scratch.daily_req = alter_next_plan
   try:
     persona.scratch.f_daily_schedule_append(convert_event_to_minutes(persona.scratch.daily_req)[-1])## whether need to append the plan ---------TODO
@@ -697,7 +689,6 @@ def _determine_action(persona, maze):
         if determine_decomp(act_desp, act_dura): 
           persona.scratch.f_daily_schedule[curr_index_60:curr_index_60+1] = (
                               generate_task_decomp(persona, act_desp, act_dura))
-          ipdb.set_trace()
           f_daily_schedule_in_txt = convert_list_to_natrual_txt(persona.scratch.f_daily_schedule, persona.scratch.start_time)
           persona.scratch.curr_plan = f_daily_schedule_in_txt.copy()
   # * End of Decompose * 
@@ -881,7 +872,7 @@ def _should_react(persona, retrieved, personas):
       if init_persona.scratch.fighting_with_buffer[target_persona.name] > 0: 
         return False
 
-    if generate_decide_to_fight(init_persona, target_persona, retrieved): # TODO: need to implement this function
+    if generate_decide_to_fight(init_persona, target_persona, retrieved):
 
       return True
 
@@ -940,7 +931,7 @@ def _should_react(persona, retrieved, personas):
   if ":" not in curr_event.subject: 
     # this is a persona event. 
     
-    if lets_fight(persona,personas[curr_event_subject], retrieved): # Decide whether to fight
+    if lets_fight(persona,personas[curr_event.subject], retrieved): # Decide whether to fight
       return f"fight with {curr_event.subject}"
     
     if lets_talk(persona, personas[curr_event.subject], retrieved):
@@ -1072,14 +1063,14 @@ def _fight_react(maze, persona, focused_event, reaction_mode, personas): # TODO:
   # There are two personas -- the persona who is initiating the fight
   # and the persona who is the target. We get the persona instances here. 
   init_persona = persona
-  target_persona = personas[reaction_mode[9:].strip()]
+  target_persona = personas[reaction_mode[10:].strip()]
   curr_personas = [init_persona, target_persona]
 
   # Actually creating the fight here. 
-  convo, duration_min = generate_convo(maze, init_persona, target_persona) 
+  battle, duration_min = generate_battle(maze, init_persona, target_persona) 
   # -------------------------------------------------------------------------
-  convo_summary = generate_convo_summary(init_persona, convo)
-  inserted_act = convo_summary
+  battle_summary = generate_battle_summary(init_persona, battle)
+  inserted_act = battle_summary
   inserted_act_dur = duration_min
 
   act_start_time = target_persona.scratch.act_start_time
@@ -1087,31 +1078,30 @@ def _fight_react(maze, persona, focused_event, reaction_mode, personas): # TODO:
   curr_time = target_persona.scratch.curr_time
   if curr_time.second != 0: 
     temp_curr_time = curr_time + datetime.timedelta(seconds=60 - curr_time.second)
-    chatting_end_time = temp_curr_time + datetime.timedelta(minutes=inserted_act_dur)
+    fightting_end_time = temp_curr_time + datetime.timedelta(minutes=inserted_act_dur)
   else: 
-    chatting_end_time = curr_time + datetime.timedelta(minutes=inserted_act_dur)
+    fightting_end_time = curr_time + datetime.timedelta(minutes=inserted_act_dur)
 
   for role, p in [("init", init_persona), ("target", target_persona)]: 
     if role == "init": 
       act_address = f"<persona> {target_persona.name}"
-      act_event = (p.name, "chat with", target_persona.name)
-      chatting_with = target_persona.name
-      chatting_with_buffer = {}
-      chatting_with_buffer[target_persona.name] = 800
+      act_event = (p.name, "fight with", target_persona.name)
+      fightting_with = target_persona.name
+      fightting_with_buffer = {}
+      fightting_with_buffer[target_persona.name] = 800
     elif role == "target": 
       act_address = f"<persona> {init_persona.name}"
-      act_event = (p.name, "chat with", init_persona.name)
-      chatting_with = init_persona.name
-      chatting_with_buffer = {}
-      chatting_with_buffer[init_persona.name] = 800
+      act_event = (p.name, "fight with", init_persona.name)
+      fightting_with = init_persona.name
+      fightting_with_buffer = {}
+      fightting_with_buffer[init_persona.name] = 800
 
-    act_pronunciatio = "💬" 
+    act_pronunciatio = "⚔️" 
     act_obj_description = None
     act_obj_pronunciatio = None
     act_obj_event = (None, None, None)
-
     _create_react(p, inserted_act, inserted_act_dur,
-      act_address, act_event, chatting_with, convo, chatting_with_buffer, chatting_end_time,
+      act_address, act_event, fightting_with, battle, fightting_with_buffer, fightting_end_time,
       act_pronunciatio, act_obj_description, act_obj_pronunciatio, 
       act_obj_event, act_start_time)
 
@@ -1161,7 +1151,10 @@ def plan(persona, maze, personas, new_day, retrieved):
   OUTPUT 
     The target action address of the persona (persona.scratch.act_address).
   """ 
+  focused_event = False
   focused_event = {}
+  if retrieved.keys(): 
+    focused_event = _choose_retrieved(persona, retrieved)
   retrived_event = ''
   try:
     for event in focused_event['events']:
@@ -1170,12 +1163,9 @@ def plan(persona, maze, personas, new_day, retrieved):
     pass
   if persona.scratch.curr_time.minute % 10 == 0 and persona.scratch.curr_time.second == 0: # every 10 minutes, the persona will make a decision
     resume = True
-    if persona.scratch.is_busy:
+    if persona.scratch.is_busy and "Battle:" not in persona.scratch.curr_plan[-1]:
       resume = generate_decision(persona,retrived_event)
-      print(f'(((((((((((((((((((((((((((((((((((((((((((((({resume}))))))))))))))))))))))))))))))))))))))))))))))')
-    
-    if retrieved.keys(): 
-      focused_event = _choose_retrieved(persona, retrieved)
+  
     # PART 1: Generate the hourly schedule. 
     if (not persona.scratch.is_busy) or (persona.scratch.curr_time >= persona.scratch.busy_until) or (not resume): # if the persona is not busy or decide to not follow the current plan, generate a new plan
       _long_term_planning(persona, new_day,resume)
@@ -1184,7 +1174,6 @@ def plan(persona, maze, personas, new_day, retrieved):
       next_activity=persona.scratch.f_daily_schedule_hourly_org[-1]
       persona.scratch.busy_until = (persona.scratch.curr_time 
                                     + datetime.timedelta(minutes=next_activity[1]))
-      ipdb.set_trace()
       print(f'-------------------------{persona.scratch.daily_req}-------------------------------------')
       print(f'##########################{persona.scratch.curr_plan}##################################')
       _determine_action(persona, maze)
@@ -1208,7 +1197,7 @@ def plan(persona, maze, personas, new_day, retrieved):
   #         dictionary {["curr_event"] = <ConceptNode>, 
   #                     ["events"] = [<ConceptNode>, ...], 
   #                     ["thoughts"] = [<ConceptNode>, ...]}
-  focused_event = False
+  
 
   
   # Step 2: Once we choose an event, we need to determine whether the
@@ -1226,7 +1215,7 @@ def plan(persona, maze, personas, new_day, retrieved):
       elif reaction_mode[:4] == "wait": 
         _wait_react(persona, reaction_mode)
       elif reaction_mode[:5] == "fight":
-        _fight_react(persona, reaction_mode)
+        _fight_react(maze, persona, focused_event, reaction_mode, personas)
       # elif reaction_mode == "do other things": 
       #   _chat_react(persona, focused_event, reaction_mode, personas)
 

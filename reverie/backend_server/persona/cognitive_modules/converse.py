@@ -123,6 +123,21 @@ def generate_one_utterance(maze, init_persona, target_persona, retrieved, curr_c
 
   return x["utterance"], x["end"]
 
+def generate_one_utterance_fight(maze, init_persona, target_persona, retrieved, curr_fight): 
+  # Chat version optimized for speed via batch generation
+  curr_context = (f"{init_persona.scratch.name} " + 
+              f"was {init_persona.scratch.act_description} " + 
+              f"when {init_persona.scratch.name} " + 
+              f"saw {target_persona.scratch.name} " + 
+              f"in the middle of {target_persona.scratch.act_description}.\n")
+  curr_context += (f"{init_persona.scratch.name} " +
+              f"is initiating a battle with " +
+              f"{target_persona.scratch.name}.")
+  x = run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_fight)[0]
+
+
+  return x["move"]
+
 def agent_chat_v2(maze, init_persona, target_persona): 
   curr_chat = []
   print ("July 23")
@@ -178,8 +193,91 @@ def agent_chat_v2(maze, init_persona, target_persona):
 
   return curr_chat
 
+def update_battle_status(init_persona, target_persona, move_init, move_target):
+  '''
+  This function will update the health status of the two personas.
+  
+  Inputs:
+    init_persona: the first persona
+    target_persona: the second persona
+    move_init: the move of the first persona
+    move_target: the move of the second persona
+    
+  Outputs:
+    True if one of the personas is dead, False otherwise
+  
+  '''
+  if "Attack" in move_init and "Defend" not in move_target: 
+    target_persona.scratch.hp -= 5
+  if "Attack" in move_target and "Defend" not in move_init: 
+    init_persona.scratch.hp -= 5
+  if init_persona.scratch.hp <= 0 or target_persona.scratch.hp <= 0 or "Run" in move_init or "Run" in move_target: 
+    return True
+  return False
+    
+    
 
+def agent_battle_v1(maze, init_persona, target_persona): 
+  curr_fight = []
+  print ("July 23")
 
+  for i in range(8):
+    
+    # -----------Below will generate the move for the init persona----------------
+    focal_points = [f"{target_persona.scratch.name}"]
+    retrieved = new_retrieve(init_persona, focal_points, 50)
+    relationship = generate_summarize_agent_relationship(init_persona, target_persona, retrieved)
+    print ("-------- relationshopadsjfhkalsdjf", relationship)
+    last_chat = ""
+    for i in curr_fight[-4:]:
+      last_chat += ": ".join(i) + "\n"
+    if last_chat: 
+      focal_points = [f"{relationship}", 
+                      f"{target_persona.scratch.name} is {target_persona.scratch.act_description}", 
+                      last_chat]
+    else: 
+      focal_points = [f"{relationship}", 
+                      f"{target_persona.scratch.name} is {target_persona.scratch.act_description}"]
+    retrieved = new_retrieve(init_persona, focal_points, 15)
+    move_init = generate_one_utterance_fight(maze, init_persona, target_persona, retrieved, curr_fight)
+    
+    # -----------Below will generate the move for the target persona----------------
+    focal_points = [f"{init_persona.scratch.name}"]
+    retrieved = new_retrieve(target_persona, focal_points, 50)
+    relationship = generate_summarize_agent_relationship(target_persona, init_persona, retrieved)
+    print ("-------- relationshopadsjfhkalsdjf", relationship)
+    last_chat = ""
+    for i in curr_fight[-4:]:
+      last_chat += ": ".join(i) + "\n"
+    if last_chat: 
+      focal_points = [f"{relationship}", 
+                      f"{init_persona.scratch.name} is {init_persona.scratch.act_description}", 
+                      last_chat]
+    else: 
+      focal_points = [f"{relationship}", 
+                      f"{init_persona.scratch.name} is {init_persona.scratch.act_description}"]
+    retrieved = new_retrieve(target_persona, focal_points, 15)
+    move_target = generate_one_utterance_fight(maze, target_persona, init_persona, retrieved, curr_fight)
+    end=update_battle_status(init_persona, target_persona, move_init, move_target)
+    default_weapon = "sword"
+    if move_init == "Attack":
+      move_init += f" with {default_weapon}"
+    if move_target == "Attack":
+      move_target += f" with {default_weapon}"
+    curr_fight += [[init_persona.scratch.name, move_init]]
+    curr_fight += [[target_persona.scratch.name, move_target]]
+    
+    if end:
+      break
+
+  print("Currently, the health status of the two personas are as follows:")
+  print(f"{init_persona.scratch.name}: {init_persona.scratch.hp}")
+  print(f"{target_persona.scratch.name}: {target_persona.scratch.hp}")
+  print ("++++++++++++++\n")
+  for row in curr_fight: 
+    print (row)
+
+  return curr_fight
 
 
 

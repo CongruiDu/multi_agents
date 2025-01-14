@@ -193,6 +193,23 @@
 			</div>
 			<br>
 
+			<h4 style="font-size:1.45em"><strong>Agent's Battle Logs</strong></h4>
+			<div class="" style="width:100%">
+			  {% for node_details in a_mem_fight %}
+				  <p>
+				  	Created: {{ node_details.created }} 
+				  	<br>
+				  	Description: {{ node_details.description }}
+				  	<br>
+				  	Filling: <br>
+				  	{% for name, utt in node_details.filling %}
+				  	<span style="font-style: italic;">{{ name }}</span>: {{ utt }}<br>
+				  	{% endfor %}
+				  </p> 
+			  {% endfor %}
+			</div>
+			<br>
+
 			<h4 style="font-size:1.45em"><strong>Agent's Thought</strong></h4>
 			<div class="" style="width:100%">
 			  {% for node_details in a_mem_thought %}

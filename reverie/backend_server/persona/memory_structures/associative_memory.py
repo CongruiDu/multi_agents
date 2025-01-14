@@ -26,7 +26,7 @@ class ConceptNode:
     self.node_id = node_id
     self.node_count = node_count
     self.type_count = type_count
-    self.type = node_type # thought / event / chat
+    self.type = node_type # thought / event / chat / fight
     self.depth = depth
 
     self.created = created
@@ -102,6 +102,9 @@ class AssociativeMemory:
       elif node_type == "thought": 
         self.add_thought(created, expiration, s, p, o, 
                    description, keywords, poignancy, embedding_pair, filling)
+      elif node_type == "fight":
+        self.add_fight(created, expiration, s, p, o,
+                    description, keywords, poignancy, embedding_pair, filling)
 
     kw_strength_load = json.load(open(f_saved + "/kw_strength.json"))
     if kw_strength_load["kw_strength_event"]: 
@@ -271,6 +274,35 @@ class AssociativeMemory:
         
     return node
 
+  def add_fight(self, created, expiration, s, p, o, 
+                     description, keywords, poignancy, 
+                     embedding_pair, filling): 
+    # Setting up the node ID and counts.
+    node_count = len(self.id_to_node.keys()) + 1
+    type_count = len(self.seq_chat) + 1
+    node_type = "fight"
+    node_id = f"node_{str(node_count)}"
+    depth = 0
+
+    # Creating the <ConceptNode> object.
+    node = ConceptNode(node_id, node_count, type_count, node_type, depth,
+                       created, expiration, 
+                       s, p, o, 
+                       description, embedding_pair[0], poignancy, keywords, filling)
+
+    # Creating various dictionary cache for fast access. 
+    self.seq_chat[0:0] = [node]
+    keywords = [i.lower() for i in keywords]
+    for kw in keywords: 
+      if kw in self.kw_to_chat: 
+        self.kw_to_chat[kw][0:0] = [node]
+      else: 
+        self.kw_to_chat[kw] = [node]
+    self.id_to_node[node_id] = node 
+
+    self.embeddings[embedding_pair[0]] = embedding_pair[1]
+        
+    return node
 
   def get_summarized_latest_events(self, retention): 
     ret_set = set()

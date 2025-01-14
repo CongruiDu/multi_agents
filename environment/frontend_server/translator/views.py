@@ -205,6 +205,7 @@ def replay_persona_state(request, sim_code, step, persona_name):
   a_mem_event = []
   a_mem_chat = []
   a_mem_thought = []
+  a_mem_fight = []
 
   for count in range(len(associative.keys()), 0, -1): 
     node_id = f"node_{str(count)}"
@@ -218,6 +219,8 @@ def replay_persona_state(request, sim_code, step, persona_name):
 
     elif node_details["type"] == "thought":
       a_mem_thought += [node_details]
+    elif node_details['type'] == 'fight':
+      a_mem_fight += [node_details]
   
   context = {"sim_code": sim_code,
              "step": step,
@@ -227,7 +230,8 @@ def replay_persona_state(request, sim_code, step, persona_name):
              "spatial": spatial,
              "a_mem_event": a_mem_event,
              "a_mem_chat": a_mem_chat,
-             "a_mem_thought": a_mem_thought}
+             "a_mem_thought": a_mem_thought,
+             "a_mem_fight": a_mem_fight}
   template = "persona_state/persona_state.html"
   return render(request, template, context)
 

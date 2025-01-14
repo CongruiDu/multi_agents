@@ -6,6 +6,7 @@ Variables:
 !<INPUT 2>! -- Persona first names
 
 <commentblockmarker>###</commentblockmarker>
+Task: only output an integer that indicate the wake up hour of the person
 !<INPUT 0>!
 
 In general, !<INPUT 1>!

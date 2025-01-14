@@ -9,6 +9,8 @@ import random
 import openai
 import time 
 import ipdb
+from transformers import AutoTokenizer, AutoModel
+import torch
 
 from utils import *
 
@@ -20,11 +22,11 @@ def temp_sleep(seconds=0.1):
 def ChatGPT_single_request(prompt): 
   temp_sleep()
 
-  completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-instruct", 
+  response = client.chat.completions.create(
+    model=deployment_name, 
     messages=[{"role": "user", "content": prompt}]
   )
-  return completion["choices"][0]["message"]["content"]
+  return response.choices[0].message.content
 
 
 # ============================================================================
@@ -46,12 +48,12 @@ def GPT4_request(prompt):
   temp_sleep()
 
   try: 
-    completion = openai.ChatCompletion.create(
-    model="gpt-4", 
-    messages=[{"role": "user", "content": prompt}]
+    response = client.chat.completions.create(
+      model=deployment_name, 
+      messages=[{"role": "user", "content": prompt}]
     )
-    return completion["choices"][0]["message"]["content"]
-  
+    return response.choices[0].message.content
+    
   except: 
     print ("ChatGPT ERROR")
     return "ChatGPT ERROR"
@@ -71,12 +73,11 @@ def ChatGPT_request(prompt):
   """
   # temp_sleep()
   try: 
-    response = openai.Completion.create(
-    model="gpt-3.5-turbo-instruct", 
-    prompt=prompt,
-    max_tokens= 150,
+    response = client.chat.completions.create(
+      model=deployment_name, 
+      messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].text
+    return response.choices[0].message.content
   
   except: 
     ipdb.set_trace()
@@ -215,9 +216,9 @@ def GPT_request(prompt, gpt_parameter):
   """
   temp_sleep()
   try: 
-    response = openai.Completion.create(
-                model=gpt_parameter["engine"],
-                prompt=prompt,
+    response = client.chat.completions.create(
+                model=deployment_name,
+                messages=[{"role": "user", "content": prompt}],
                 temperature=gpt_parameter["temperature"],
                 max_tokens=gpt_parameter["max_tokens"],
                 top_p=gpt_parameter["top_p"],
@@ -225,7 +226,7 @@ def GPT_request(prompt, gpt_parameter):
                 presence_penalty=gpt_parameter["presence_penalty"],
                 stream=gpt_parameter["stream"],
                 stop=gpt_parameter["stop"],)
-    return response.choices[0].text
+    return response.choices[0].message.content
   except: 
     print ("TOKEN LIMIT EXCEEDED")
     return "TOKEN LIMIT EXCEEDED"
@@ -279,12 +280,32 @@ def safe_generate_response(prompt,
   return fail_safe_response
 
 
-def get_embedding(text, model="text-embedding-ada-002"):
-  text = text.replace("\n", " ")
-  if not text: 
-    text = "this is blank"
-  return openai.Embedding.create(
-          input=[text], model=model)['data'][0]['embedding']
+# def get_embedding(text, model="text-embedding-ada-002"):
+#   text = text.replace("\n", " ")
+#   if not text: 
+#     text = "this is blank"
+#   return openai.Embedding.create(
+#           input=[text], model=model)['data'][0]['embedding']
+
+
+
+def get_embedding(text, model_name="sentence-transformers/all-MiniLM-L6-v2"):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name).to(device)
+    
+    if not text:
+        text = "this is blank"
+    
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    inputs = {key: value.to(device) for key, value in inputs.items()} 
+    
+    with torch.no_grad():
+        outputs = model(**inputs)
+  
+    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy() 
+    
+    return embeddings
 
 
 if __name__ == '__main__':

@@ -67,7 +67,7 @@ def run_gpt_prompt_wake_up_hour(persona, test_input=None, verbose=False):
     fs = 8
     return fs
 
-  gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 5, 
+  gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 20, 
              "temperature": 0.8, "top_p": 1, "stream": False,
              "frequency_penalty": 0, "presence_penalty": 0, "stop": ["\n"]}
   prompt_template = "persona/prompt_template/v2/wake_up_hour_v1.txt"
@@ -75,7 +75,6 @@ def run_gpt_prompt_wake_up_hour(persona, test_input=None, verbose=False):
   prompt_input = create_prompt_input(persona, test_input)
   prompt = generate_prompt(prompt_input, prompt_template)
   fail_safe = get_fail_safe()
-
   output = safe_generate_response(prompt, gpt_param, 5, fail_safe,
                                    __func_validate, __func_clean_up)
   
@@ -1971,7 +1970,7 @@ def run_gpt_prompt_summarize_battle(persona, battle, test_input=None, verbose=Fa
 
   # ChatGPT Plugin ===========================================================
   def __chat_func_clean_up(gpt_response, prompt=""): ############
-    ret = "Battle summary " + gpt_response.strip()
+    ret = "Battle: " + gpt_response.strip()
     return ret
 
   def __chat_func_validate(gpt_response, prompt=""): ############
@@ -1986,10 +1985,10 @@ def run_gpt_prompt_summarize_battle(persona, battle, test_input=None, verbose=Fa
   gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 15, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
-  prompt_template = "persona/prompt_template/v3_ChatGPT/summarize_battle_v1.txt" ########
+  prompt_template = "persona/prompt_template/v3_ChatGPT/summerize_battle_v1.txt" ########
   prompt_input = create_prompt_input(battle, test_input)  ########
   prompt = generate_prompt(prompt_input, prompt_template)
-  example_output = "Battle between Tom and Jerry. Tom lost 10 HP and Jerry lost 5 HP." ########
+  example_output = "Tom and Jerry exchanged sword attacks, briefly defended, and then Tom struck again while Jerry chose to run away." ########
   special_instruction = "The output must continue the sentence above by filling in the <fill in> tag. Don't start with 'In this battle, ...' Just finish the sentence but do not miss any important details (including who are fighting)." ########
   fail_safe = get_fail_safe() ########
   output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
@@ -3266,7 +3265,92 @@ def run_gpt_generate_iterative_chat_utt(maze, init_persona, target_persona, retr
 
 
 
+def run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, retrieved, curr_context, curr_fight, test_input=None, verbose=False): 
+  def create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_fight, test_input=None):
+    persona = init_persona
+    prev_convo_insert = "\n"
+    if persona.a_mem.seq_chat: 
+      for i in persona.a_mem.seq_chat: 
+        if i.object == target_persona.scratch.name: 
+          v1 = int((persona.scratch.curr_time - i.created).total_seconds()/60)
+          prev_convo_insert += f'{str(v1)} minutes ago, {persona.scratch.name} and {target_persona.scratch.name} were already {i.description} This context takes place after that battle.'
+          break
+    if prev_convo_insert == "\n": 
+      prev_convo_insert = ""
+    if persona.a_mem.seq_chat: 
+      if int((persona.scratch.curr_time - persona.a_mem.seq_chat[-1].created).total_seconds()/60) > 480: 
+        prev_convo_insert = ""
+    print (prev_convo_insert)
 
+    curr_sector = f"{maze.access_tile(persona.scratch.curr_tile)['sector']}"
+    curr_arena= f"{maze.access_tile(persona.scratch.curr_tile)['arena']}"
+    curr_location = f"{curr_arena} in {curr_sector}"
+
+    retrieved_str = ""
+    for key, vals in retrieved.items(): 
+      for v in vals: 
+        retrieved_str += f"- {v.description}\n"
+
+
+    convo_str = ""
+    for i in curr_fight:
+      convo_str += ": ".join(i) + "\n"
+    if convo_str == "": 
+      convo_str = "[The battle has not started yet -- start it!]"
+
+    init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
+    prompt_input = [init_iss, init_persona.scratch.name, retrieved_str, prev_convo_insert,
+      curr_location, curr_context, init_persona.scratch.name, target_persona.scratch.name,
+      convo_str, init_persona.scratch.name, target_persona.scratch.name,
+      init_persona.scratch.name, init_persona.scratch.name,
+      init_persona.scratch.name, init_persona.scratch.backpack,init_persona.scratch.hp
+      ]
+    return prompt_input
+
+  def __chat_func_clean_up(gpt_response, prompt=""): 
+    gpt_response = extract_first_json_dict(gpt_response)
+
+    cleaned_dict = dict()
+    cleaned = []
+    for key, val in gpt_response.items(): 
+      cleaned += [val]
+    cleaned_dict["move"] = cleaned[0]
+
+    return cleaned_dict
+
+  def __chat_func_validate(gpt_response, prompt=""): 
+    print ("ugh...")
+    try: 
+      # print ("debug 1")
+      # print (gpt_response)
+      # print ("debug 2")
+
+      print (extract_first_json_dict(gpt_response))
+      # print ("debug 3")
+
+      return True
+    except:
+      return False 
+
+  def get_fail_safe():
+    cleaned_dict = dict()
+    cleaned_dict["move"] = "..."
+    return cleaned_dict
+
+  print("Start Fighting!!!!!")
+  prompt_template = "persona/prompt_template/v3_ChatGPT/iterative_battle_v1.txt" 
+  prompt_input = create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_fight) 
+  prompt = generate_prompt(prompt_input, prompt_template)
+  print (prompt)
+  fail_safe = get_fail_safe() 
+  output = ChatGPT_safe_generate_response_OLD(prompt, 3, fail_safe,
+                        __chat_func_validate, __chat_func_clean_up, verbose)
+  print (output)
+  
+  gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 50, 
+               "temperature": 0, "top_p": 1, "stream": False,
+               "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
+  return output, [output, prompt, gpt_param, prompt_input, fail_safe]
 
 
 

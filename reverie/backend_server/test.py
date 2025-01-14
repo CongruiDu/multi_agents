@@ -6,11 +6,22 @@ Description: Wrapper functions for calling OpenAI APIs.
 """
 import json
 import random
-import openai
+from openai import AzureOpenAI
 import time 
 
 from utils import *
-openai.api_key = openai_api_key
+deployment_name = "gpt-4o-mini"
+api_version = "2024-10-01-preview"
+
+load_dotenv()
+
+openai_api_key = os.getenv("api_key")
+client = AzureOpenAI(
+    api_key=openai_api_key,
+    api_version=api_version,
+    azure_endpoint="https://gpt4o-mini-bairu.openai.azure.com/",
+)
+
 
 def ChatGPT_request(prompt): 
   """
@@ -25,16 +36,12 @@ def ChatGPT_request(prompt):
     a str of GPT-3's response. 
   """
   # temp_sleep()
-  try: 
-    completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-instruct", 
-    messages=[{"role": "user", "content": prompt}]
-    )
-    return completion["choices"][0]["message"]["content"]
+  response = client.chat.completions.create(
+  model=deployment_name, 
+  messages=[{"role": "user", "content": prompt}]
+  )
+  return response.choices[0].message.content
   
-  except: 
-    print ("ChatGPT ERROR")
-    return "ChatGPT ERROR"
 
 prompt = """
 ---

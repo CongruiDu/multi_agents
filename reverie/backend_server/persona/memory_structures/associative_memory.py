@@ -55,13 +55,17 @@ class AssociativeMemory:
     self.seq_event = []
     self.seq_thought = []
     self.seq_chat = []
+    self.seq_fight = []
 
     self.kw_to_event = dict()
     self.kw_to_thought = dict()
     self.kw_to_chat = dict()
+    self.kw_to_fight = dict()
 
     self.kw_strength_event = dict()
     self.kw_strength_thought = dict()
+    
+
 
     self.embeddings = json.load(open(f_saved + "/embeddings.json"))
 
@@ -104,7 +108,7 @@ class AssociativeMemory:
                    description, keywords, poignancy, embedding_pair, filling)
       elif node_type == "fight":
         self.add_fight(created, expiration, s, p, o,
-                    description, keywords, poignancy, embedding_pair, filling)
+                        description, keywords, poignancy, embedding_pair, filling)
 
     kw_strength_load = json.load(open(f_saved + "/kw_strength.json"))
     if kw_strength_load["kw_strength_event"]: 
@@ -273,13 +277,12 @@ class AssociativeMemory:
     self.embeddings[embedding_pair[0]] = embedding_pair[1]
         
     return node
-
   def add_fight(self, created, expiration, s, p, o, 
                      description, keywords, poignancy, 
                      embedding_pair, filling): 
     # Setting up the node ID and counts.
     node_count = len(self.id_to_node.keys()) + 1
-    type_count = len(self.seq_chat) + 1
+    type_count = len(self.seq_fight) + 1
     node_type = "fight"
     node_id = f"node_{str(node_count)}"
     depth = 0
@@ -291,13 +294,13 @@ class AssociativeMemory:
                        description, embedding_pair[0], poignancy, keywords, filling)
 
     # Creating various dictionary cache for fast access. 
-    self.seq_chat[0:0] = [node]
+    self.seq_fight[0:0] = [node]
     keywords = [i.lower() for i in keywords]
     for kw in keywords: 
-      if kw in self.kw_to_chat: 
-        self.kw_to_chat[kw][0:0] = [node]
+      if kw in self.kw_to_fight: 
+        self.kw_to_fight[kw][0:0] = [node]
       else: 
-        self.kw_to_chat[kw] = [node]
+        self.kw_to_fight[kw] = [node]
     self.id_to_node[node_id] = node 
 
     self.embeddings[embedding_pair[0]] = embedding_pair[1]
@@ -333,6 +336,15 @@ class AssociativeMemory:
       for row in event.filling: 
         ret_str += f"{row[0]}: {row[1]}\n"
     return ret_str
+  
+  def get_str_seq_fights(self):
+    ret_str = ""
+    for count, event in enumerate(self.seq_fight): 
+      ret_str += f"with {event.object} ({event.description})\n"
+      ret_str += f'{event.created.strftime("%B %d, %Y, %H:%M:%S")}\n'
+      for row in event.filling: 
+        ret_str += f"{row[0]}: {row[1]}\n"
+    return ret_str
 
 
   def retrieve_relevant_thoughts(self, s_content, p_content, o_content): 
@@ -364,7 +376,11 @@ class AssociativeMemory:
       return self.kw_to_chat[target_persona_name.lower()][0]
     else: 
       return False
-
+  def get_last_fight(self, target_persona_name): 
+    if target_persona_name.lower() in self.kw_to_fight: 
+      return self.kw_to_fight[target_persona_name.lower()][0]
+    else: 
+      return False
 
 
 

@@ -21,6 +21,9 @@ def generate_poig_score(persona, event_type, description):
   elif event_type == "chat": 
     return run_gpt_prompt_chat_poignancy(persona, 
                            persona.scratch.act_description)[0]
+  elif event_type == "fight":
+    return run_gpt_prompt_fight_poignancy(persona, 
+                           persona.scratch.act_description)[0]
 
 def perceive(persona, maze): 
   """
@@ -170,6 +173,25 @@ def perceive(persona, maze):
                       chat_poignancy, chat_embedding_pair, 
                       persona.scratch.chat)
         chat_node_ids = [chat_node.node_id]
+      if p_event[0] == f"{persona.name}" and p_event[1] == "fight with": 
+        curr_event = persona.scratch.act_event
+        if persona.scratch.act_description in persona.a_mem.embeddings: 
+          fight_embedding = persona.a_mem.embeddings[
+                             persona.scratch.act_description]
+        else: 
+          fight_embedding = get_embedding(persona.scratch
+                                                .act_description)
+        fight_embedding_pair = (persona.scratch.act_description, 
+                               fight_embedding)
+        fight_poignancy = generate_poig_score(persona, "fight", 
+                                             persona.scratch.act_description)
+        fight_node = persona.a_mem.add_fight(persona.scratch.curr_time, None,
+                      curr_event[0], curr_event[1], curr_event[2], 
+                      persona.scratch.act_description, keywords, 
+                      fight_poignancy, fight_embedding_pair, 
+                      persona.scratch.chat)
+        chat_node_ids = [fight_node.node_id]
+        
 
       # Finally, we add the current event to the agent's memory. 
       ret_events += [persona.a_mem.add_event(persona.scratch.curr_time, None,

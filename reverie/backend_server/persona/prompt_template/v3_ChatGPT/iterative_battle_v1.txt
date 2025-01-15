@@ -17,6 +17,10 @@ Variables:
 !<INPUT 13>! -- persona name
 !<INPUT 14>! -- persona backpack
 !<INPUT 15>! -- persona HP
+!<INPUT 16>! -- init persona position
+!<INPUT 17>! -- target persona position
+!<INPUT 18>! -- distance
+!<INPUT 19>! -- target persona hp
 <commentblockmarker>###</commentblockmarker>
 Context for the task: 
 
@@ -39,10 +43,27 @@ Current Context:
 !<INPUT 8>!
 !<INPUT 1>! has following items in the backpack: 
 !<INPUT 14>!
+Attributes of each items:
+
+sword:
+Attack Power: 5
+Attack Range：2
+
+bow:
+Attack Power: 2
+Attack Range：5
+
 !<INPUT 12>!'s current hp: !<INPUT 15>! / 100
+Enemy's current hp: !<INPUT 19>! / 100
+!<INPUT 1>!'s position: !<INPUT 16>!
+!<INPUT 10>! 's psotion: !<INPUT 17>!
+The distance between them: !<INPUT 18>!
+
 ---
-Task: Given the above, what should !<INPUT 9>! do to !<INPUT 10>! next in the round of fight? You must pick one of the options from ["Attack", "Run Away", "Defend"]. 
-If you choose "Attack", please indicate what item you want to use to attack based on what the person has in the backpack.
+Task: Given the above, what should !<INPUT 9>! do to !<INPUT 10>! next in the round of fight? You must pick one of the options from ["Attack", "Run Away", "Defend","Approach Enemy“]. 
+If you choose "Defend", !<INPUT 9>!'s hp will not be reduced no matter what move enemy will make.
+If you choose "Attack", please indicate what item you want to use to attack based on what the person has in the backpack by outputing "Attack with <weapon>".
+Please note if the attack range of the weapon is less than the distance, there will be no effect to the enemy.
 
 Output format: Output a json of the following format: 
 {

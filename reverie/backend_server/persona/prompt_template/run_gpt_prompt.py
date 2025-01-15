@@ -10,6 +10,7 @@ import datetime
 import sys
 import ast
 import ipdb
+import math
 
 sys.path.append('../../')
 
@@ -1526,12 +1527,12 @@ def run_gpt_prompt_decide_to_fight(persona, target_persona, retrieved,test_input
                                        verbose=False): 
   def create_prompt_input(init_persona, target_persona, retrieved, 
                           test_input=None): 
-    last_chat = init_persona.a_mem.get_last_chat(target_persona.name)
-    last_chatted_time = ""
-    last_chat_about = ""
-    if last_chat: 
-      last_chatted_time = last_chat.created.strftime("%B %d, %Y, %H:%M:%S")
-      last_chat_about = last_chat.description
+    last_fight = init_persona.a_mem.get_last_fight(target_persona.name)
+    last_fighted_time = ""
+    last_fight_about = ""
+    if last_fight: 
+      last_fighted_time = last_fight.created.strftime("%B %d, %Y, %H:%M:%S")
+      last_fight_about = last_fight.description
 
     context = ""
     for c_node in retrieved["events"]: 
@@ -1574,14 +1575,17 @@ def run_gpt_prompt_decide_to_fight(persona, target_persona, retrieved,test_input
 
     prompt_input += [init_persona.name]
     prompt_input += [target_persona.name]
-    prompt_input += [last_chatted_time]
-    prompt_input += [last_chat_about]
+    prompt_input += [last_fighted_time]
+    prompt_input += [last_fight_about]
 
 
     prompt_input += [init_p_desc]
     prompt_input += [target_p_desc]
     prompt_input += [init_persona.name]
     prompt_input += [target_persona.name]
+    prompt_input += [init_persona.scratch.backpack]
+    prompt_input += [init_persona.scratch.hp]
+    prompt_input += [target_persona.scratch.hp]
     return prompt_input
   
   def __func_validate(gpt_response, prompt=""): 
@@ -1596,7 +1600,7 @@ def run_gpt_prompt_decide_to_fight(persona, target_persona, retrieved,test_input
     return gpt_response.split("Answer in yes or no:")[-1].strip().lower()
 
   def get_fail_safe(): 
-    fs = "yes"
+    fs = "no"
     return fs
 
 
@@ -1604,7 +1608,7 @@ def run_gpt_prompt_decide_to_fight(persona, target_persona, retrieved,test_input
   gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 20, 
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
-  prompt_template = "persona/prompt_template/v2/decide_to_talk_v2.txt"
+  prompt_template = "persona/prompt_template/v2/decide_to_fight_v1.txt"
   prompt_input = create_prompt_input(persona, target_persona, retrieved,
                                      test_input)
   prompt = generate_prompt(prompt_input, prompt_template)
@@ -1995,6 +1999,10 @@ def run_gpt_prompt_summarize_battle(persona, battle, test_input=None, verbose=Fa
                                           __chat_func_validate, __chat_func_clean_up, True)
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+  else:
+    output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
+                                          __chat_func_validate, __chat_func_clean_up, True)
+    return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   
   
   
@@ -2227,8 +2235,11 @@ def run_gpt_prompt_event_poignancy(persona, event_description, test_input=None, 
   example_output = "5" ########
   special_instruction = "The output should ONLY contain ONE integer value on the scale of 1 to 10." ########
   fail_safe = get_fail_safe() ########
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
+  try:
+    output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
                                           __chat_func_validate, __chat_func_clean_up, True)
+  except:
+    ipdb.set_trace()
   if output != False: 
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   # ChatGPT Plugin ===========================================================
@@ -2365,6 +2376,57 @@ def run_gpt_prompt_chat_poignancy(persona, event_description, test_input=None, v
                "temperature": 0, "top_p": 1, "stream": False,
                "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
   prompt_template = "persona/prompt_template/v3_ChatGPT/poignancy_chat_v1.txt" ########
+  prompt_input = create_prompt_input(persona, event_description)  ########
+  prompt = generate_prompt(prompt_input, prompt_template)
+  example_output = "5" ########
+  special_instruction = "The output should ONLY contain ONE integer value on the scale of 1 to 10." ########
+  fail_safe = get_fail_safe() ########
+  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
+                                          __chat_func_validate, __chat_func_clean_up, True)
+  if output != False: 
+    return output, [output, prompt, gpt_param, prompt_input, fail_safe]
+
+
+def run_gpt_prompt_fight_poignancy(persona, event_description, test_input=None, verbose=False): 
+  def create_prompt_input(persona, event_description, test_input=None): 
+    prompt_input = [persona.scratch.name,
+                    persona.scratch.get_str_iss(),
+                    persona.scratch.name,
+                    event_description]
+    return prompt_input
+  
+  def __func_clean_up(gpt_response, prompt=""):
+    gpt_response = int(gpt_response.strip())
+    return gpt_response
+
+  def __func_validate(gpt_response, prompt=""): 
+    try: 
+      __func_clean_up(gpt_response, prompt)
+      return True
+    except:
+      return False 
+
+  def get_fail_safe(): 
+    return 4
+
+
+  # ChatGPT Plugin ===========================================================
+  def __chat_func_clean_up(gpt_response, prompt=""): ############
+    gpt_response = int(gpt_response)
+    return gpt_response
+
+  def __chat_func_validate(gpt_response, prompt=""): ############
+    try: 
+      __func_clean_up(gpt_response, prompt)
+      return True
+    except:
+      return False 
+
+  print ("asdhfapsh8p9hfaiafdsi;ldfj as DEBUG 9") ########
+  gpt_param = {"engine": "gpt-3.5-turbo-instruct", "max_tokens": 15, 
+               "temperature": 0, "top_p": 1, "stream": False,
+               "frequency_penalty": 0, "presence_penalty": 0, "stop": None}
+  prompt_template = "persona/prompt_template/v3_ChatGPT/poignancy_fight_v1.txt" ########
   prompt_input = create_prompt_input(persona, event_description)  ########
   prompt = generate_prompt(prompt_input, prompt_template)
   example_output = "5" ########
@@ -3299,11 +3361,13 @@ def run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, ret
       convo_str = "[The battle has not started yet -- start it!]"
 
     init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
+    distance = math.dist(init_persona.scratch.curr_tile, target_persona.scratch.curr_tile)
     prompt_input = [init_iss, init_persona.scratch.name, retrieved_str, prev_convo_insert,
       curr_location, curr_context, init_persona.scratch.name, target_persona.scratch.name,
       convo_str, init_persona.scratch.name, target_persona.scratch.name,
       init_persona.scratch.name, init_persona.scratch.name,
-      init_persona.scratch.name, init_persona.scratch.backpack,init_persona.scratch.hp
+      init_persona.scratch.name, init_persona.scratch.backpack,init_persona.scratch.hp,init_persona.scratch.curr_tile, 
+      target_persona.scratch.curr_tile,distance,target_persona.scratch.hp
       ]
     return prompt_input
 

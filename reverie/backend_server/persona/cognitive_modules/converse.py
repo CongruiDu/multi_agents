@@ -11,6 +11,7 @@ import random
 sys.path.append('../')
 
 from global_methods import *
+from path_finder import *
 
 from persona.memory_structures.spatial_memory import *
 from persona.memory_structures.associative_memory import *
@@ -193,27 +194,66 @@ def agent_chat_v2(maze, init_persona, target_persona):
 
   return curr_chat
 
-def update_battle_status(init_persona, target_persona, move_init, move_target):
-  '''
-  This function will update the health status of the two personas.
+def handle_attack(attacker, defender, move_attacker, move_defender, weapon_stats):
+  """Handle attack logic between two personas."""
+  for weapon, stats in weapon_stats.items():
+    if f"Attack with {weapon}" in move_attacker and "Defend" not in move_defender:
+        distance = math.dist(attacker.scratch.curr_tile, defender.scratch.curr_tile)
+        if distance <= stats["range"]:
+            defender.scratch.hp -= stats["power"]
+
+def handle_movement(persona, target, move, maze, collision_block_id):
+  """Handle movement logic for approaching the enemy."""
+  if "Approach Enemy" in move:
+    path = path_finder(maze.collision_maze, 
+                        persona.scratch.curr_tile, 
+                        target.scratch.curr_tile, 
+                        collision_block_id)
+    if len(path) > persona.scratch.speed:
+        persona.scratch.curr_tile = path[persona.scratch.speed]
+def handle_escape(persona, move, maze):
+  """Handle escape logic for running away from the enemy."""
+  if "Run" in move:
+    path = path_finder(maze.collision_maze, 
+                        persona.scratch.curr_tile, 
+                        maze.exit_tile, 
+                        collision_block_id)
+    if len(path) > persona.scratch.speed:
+        persona.scratch.curr_tile = path[persona.scratch.speed]
+def update_battle_status(init_persona, target_persona, move_init, move_target, maze):
+  """
+  Update the health and position of the personas based on their moves.
   
   Inputs:
-    init_persona: the first persona
-    target_persona: the second persona
-    move_init: the move of the first persona
-    move_target: the move of the second persona
-    
-  Outputs:
-    True if one of the personas is dead, False otherwise
+      init_persona: The first persona
+      target_persona: The second persona
+      move_init: The move of the first persona
+      move_target: The move of the second persona
+      maze: The maze object for pathfinding
+      collision_block_id: Identifier for collision blocks in the maze
   
-  '''
-  if "Attack" in move_init and "Defend" not in move_target: 
-    target_persona.scratch.hp -= 5
-  if "Attack" in move_target and "Defend" not in move_init: 
-    init_persona.scratch.hp -= 5
-  if init_persona.scratch.hp <= 0 or target_persona.scratch.hp <= 0 or "Run" in move_init or "Run" in move_target: 
-    return True
+  Outputs:
+      True if the battle ends (one persona is dead or someone runs), False otherwise
+  """
+  weapon_stats = {
+      "sword": {"power": 5, "range": 2},
+      "bow": {"power": 2, "range": 5}
+  }
+  
+  handle_attack(init_persona, target_persona, move_init, move_target, weapon_stats)
+  handle_attack(target_persona, init_persona, move_target, move_init, weapon_stats)
+  
+  handle_movement(init_persona, target_persona, move_init, maze, collision_block_id)
+  handle_movement(target_persona, init_persona, move_target, maze, collision_block_id)
+  
+  handle_escape(init_persona, move_init, maze)
+  handle_escape(target_persona, move_target, maze)
+
+  if init_persona.scratch.hp <= 0 or target_persona.scratch.hp <= 0 or "Run" in move_init or "Run" in move_target:
+      return True
+  
   return False
+
     
     
 
@@ -258,7 +298,7 @@ def agent_battle_v1(maze, init_persona, target_persona):
                       f"{init_persona.scratch.name} is {init_persona.scratch.act_description}"]
     retrieved = new_retrieve(target_persona, focal_points, 15)
     move_target = generate_one_utterance_fight(maze, target_persona, init_persona, retrieved, curr_fight)
-    end=update_battle_status(init_persona, target_persona, move_init, move_target)
+    end=update_battle_status(init_persona, target_persona, move_init, move_target,maze)
     default_weapon = "sword"
     if move_init == "Attack":
       move_init += f" with {default_weapon}"

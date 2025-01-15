@@ -12,7 +12,7 @@ Variables:
 !<INPUT 8>! -- Completed activities
 
 <commentblockmarker>###</commentblockmarker>
-Describe subtasks in 5 min increments. 
+Describe subtasks in 5 min increments. You must output in the format of my in-context example.
 ---
 Name: Kelly Bronson
 Age: 35

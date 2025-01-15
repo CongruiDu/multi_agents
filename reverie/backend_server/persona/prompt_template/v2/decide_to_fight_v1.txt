@@ -1,18 +1,23 @@
 decide_to_talk_v1.txt
 
 <commentblockmarker>###</commentblockmarker>
-Task -- given context, determine whether the subject will initiate a conversation with another. 
-Format: 
-Context: []
-Question: []
-Reasoning: []
-Answer in "yes" or "no": []
+Task -- Given the context, determine whether the subject will initiate a fight with another. In this world, participants are competing in a Hunger Games-style scenario where individuals from different teams must eliminate each other to survive and win the game. Participants are expected to prioritize their survival by attacking others when it benefits their position in the game. The player will be dead, when the hp is less and equal to zero.
+You must answer in "yes" or "no"
 ---
 Context: !<INPUT 0>! 
-Right now, it is !<INPUT 1>!. !<INPUT 2>! and !<INPUT 3>! last chatted at !<INPUT 4>! about !<INPUT 5>!. 
+Right now, it is !<INPUT 1>!. !<INPUT 2>! and !<INPUT 3>! are in different team. The last fight between !<INPUT 2>! and !<INPUT 3>! is at !<INPUT 4>! Summary of the fight: !<INPUT 5>!
+
 !<INPUT 6>! 
 !<INPUT 7>! 
 
-Question: Would !<INPUT 8>! initiate a fight with !<INPUT 9>!? 
+Currently, !<INPUT 8>!'s hp: !<INPUT 11>! / 100. !<INPUT 9>!'s hp: !<INPUT 12>! / 100
 
-Reasoning: Let's think step by step.
+!<INPUT 8>! has following items in the backpack:
+!<INPUT 10>!
+
+Rules of the Hunger Games:
+Players from different teams must eliminate each other to win.
+Survival is the top priority, and hesitation or avoiding a fight can result in being attacked by another player when unprepared.
+The risk of being killed increases if a player does not act when an opportunity arises.
+
+Question: Would !<INPUT 8>! initiate a fight with !<INPUT 9>!, knowing that hesitation could lead to her/his own death at the hands of !<INPUT 9>! or another player later?

@@ -603,6 +603,40 @@ class Scratch:
     self.act_start_time = self.curr_time
     
     self.act_path_set = False
+    
+  def add_new_action_fight(self, 
+                    action_address, 
+                    action_duration,
+                    action_description,
+                    action_pronunciatio, 
+                    action_event,
+                    fighting_with, 
+                    fight, 
+                    fighting_with_buffer,
+                    fighting_end_time,
+                    act_obj_description, 
+                    act_obj_pronunciatio, 
+                    act_obj_event, 
+                    act_start_time=None): 
+    self.act_address = action_address
+    self.act_duration = action_duration
+    self.act_description = action_description
+    self.act_pronunciatio = action_pronunciatio
+    self.act_event = action_event
+
+    self.fighting_with = fighting_with
+    self.fight = fight 
+    if fighting_with_buffer: 
+      self.fighting_with_buffer.update(fighting_with_buffer)
+    self.fighting_end_time = fighting_end_time
+
+    self.act_obj_description = act_obj_description
+    self.act_obj_pronunciatio = act_obj_pronunciatio
+    self.act_obj_event = act_obj_event
+    
+    self.act_start_time = self.curr_time
+    
+    self.act_path_set = False
 
 
   def act_time_str(self): 

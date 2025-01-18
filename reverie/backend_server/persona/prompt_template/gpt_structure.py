@@ -303,7 +303,7 @@ def get_embedding(text, model_name="sentence-transformers/all-MiniLM-L6-v2"):
     with torch.no_grad():
         outputs = model(**inputs)
   
-    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy() 
+    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy().tolist()
     
     return embeddings
 

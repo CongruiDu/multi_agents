@@ -7,6 +7,7 @@ memory that aids in grounding their behavior in the game world.
 """
 import json
 import sys
+import ipdb
 sys.path.append('../../')
 
 from utils import *

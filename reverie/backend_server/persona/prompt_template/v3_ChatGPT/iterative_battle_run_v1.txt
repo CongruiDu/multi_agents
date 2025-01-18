@@ -1,0 +1,106 @@
+iterative_convo_v1.txt
+
+Variables: 
+!<INPUT 0>! -- persona ISS
+!<INPUT 1>! -- persona name
+!<INPUT 2>! -- retrieved memory
+!<INPUT 3>! -- past context
+!<INPUT 4>! -- current location
+!<INPUT 5>! -- current context
+!<INPUT 6>! -- persona name
+!<INPUT 7>! -- target persona name
+!<INPUT 8>! -- curr battle
+!<INPUT 9>! -- persona name
+!<INPUT 10>! -- target persona name
+!<INPUT 11>! -- persona name
+!<INPUT 12>! -- persona name
+!<INPUT 13>! -- persona name
+!<INPUT 14>! -- persona backpack
+!<INPUT 15>! -- persona HP
+!<INPUT 16>! -- init persona position
+!<INPUT 17>! -- target persona position
+!<INPUT 18>! -- distance
+!<INPUT 19>! -- target persona hp
+!<INPUT 20>! -- init persona power
+!<INPUT 21>! -- target person power
+!<INPUT 22>! -- init person last move
+!<INPUT 23>! -- init person last tile
+!<INPUT 24>! -- init person last hp
+<commentblockmarker>###</commentblockmarker>
+Context for the task:
+
+PART 1.  
+!<INPUT 0>!  
+
+Here is the memory that is in !<INPUT 1>!'s head:  
+!<INPUT 2>!  
+
+PART 2.  
+Past Context:  
+!<INPUT 3>!  
+
+!<INPUT 11>!'s last round of move: !<INPUT 22>!  
+!<INPUT 11>!'s last round of move updates !<INPUT 11>!'s position to: !<INPUT 16>!  
+!<INPUT 11>!'s last round of move updates !<INPUT 11>!'s hp to: !<INPUT 15>!  
+
+Current Location: !<INPUT 4>!  
+
+Current Context:  
+!<INPUT 5>!  
+
+!<INPUT 6>! and !<INPUT 7>! are fighting. Here is their fight so far:  
+!<INPUT 8>!  
+!<INPUT 1>! has the following items in the backpack:  
+!<INPUT 14>!  
+Attributes of each item:  
+
+- **sword:**  
+  - Attack Power: 5  
+  - Attack Range: 1
+
+- **bow:**  
+  - Attack Power: 2  
+  - Attack Range: 5  
+
+!<INPUT 12>!'s current HP: !<INPUT 15>! / 100  
+Enemy's current HP: !<INPUT 19>! / 100  
+!<INPUT 12>!'s attack power: !<INPUT 20>!  
+Enemy's attack power: !<INPUT 21>!  
+!<INPUT 1>!'s position: !<INPUT 16>!  
+!<INPUT 10>!'s position: !<INPUT 17>!  
+The distance between them: !<INPUT 18>!  
+
+---
+
+**Task:**
+
+Your goal is to move !<INPUT 12>! as far away as possible from the enemy.  
+To achieve this, choose the direction ("up," "down," "left," or "right") that maximizes the distance between the persona and the enemy.  
+
+**Important Rules:**  
+
+1. If the last move did not change !<INPUT 12>!'s position, it indicates a collision with an object or obstacle. In this case:
+   - Avoid repeating the same direction as it is blocked.  
+   - Select a different direction to ensure the persona can move.  
+2. Consider the position changes based on the movement direction:  
+   - "up" increases `y` by 2.  
+   - "down" decreases `y` by 2.  
+   - "left" decreases `x` by 2.  
+   - "right" increases `x` by 2.  
+3. Avoid any move that would cause the persona's HP to drop to 0 or below.  
+
+**Output:**
+
+Output the decision in the following JSON format:  
+
+{
+  "!<INPUT 11>!": "<!<INPUT 12>!'s move>"
+}
+
+For example:  
+- If moving up maximizes the distance and is not blocked:  
+  `{"!<INPUT 11>!": "Run Away, up"}`  
+- If the last move "up" resulted in no position change, choose another direction, such as:  
+  `{"!<INPUT 11>!": "Run Away, left"}`  
+
+Make sure to provide the move that aligns with the goal of maximizing the distance from the enemy while avoiding obstacles.

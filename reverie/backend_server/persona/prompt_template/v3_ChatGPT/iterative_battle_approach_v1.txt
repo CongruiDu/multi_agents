@@ -1,0 +1,104 @@
+iterative_convo_v1.txt
+
+Variables: 
+!<INPUT 0>! -- persona ISS
+!<INPUT 1>! -- persona name
+!<INPUT 2>! -- retrieved memory
+!<INPUT 3>! -- past context
+!<INPUT 4>! -- current location
+!<INPUT 5>! -- current context
+!<INPUT 6>! -- persona name
+!<INPUT 7>! -- target persona name
+!<INPUT 8>! -- curr battle
+!<INPUT 9>! -- persona name
+!<INPUT 10>! -- target persona name
+!<INPUT 11>! -- persona name
+!<INPUT 12>! -- persona name
+!<INPUT 13>! -- persona name
+!<INPUT 14>! -- persona backpack
+!<INPUT 15>! -- persona HP
+!<INPUT 16>! -- init persona position
+!<INPUT 17>! -- target persona position
+!<INPUT 18>! -- distance
+!<INPUT 19>! -- target persona hp
+!<INPUT 20>! -- init persona power
+!<INPUT 21>! -- target person power
+!<INPUT 22>! -- init person last move
+<commentblockmarker>###</commentblockmarker>
+Context for the task: 
+
+PART 1. 
+!<INPUT 0>!
+
+Here is the memory that is in !<INPUT 1>!'s head: 
+!<INPUT 2>!
+
+PART 2. 
+Past Context: 
+!<INPUT 3>!
+
+!<INPUT 11>!'s last round of move: !<INPUT 22>!
+!<INPUT 11>!'s last round of move updates !<INPUT 11>!'s position to: !<INPUT 16>!
+!<INPUT 11>!'s last round of move updates !<INPUT 11>!'s hp to: !<INPUT 15>!
+
+Current Location: !<INPUT 4>!
+
+Current Context: 
+!<INPUT 5>!
+
+!<INPUT 6>! and !<INPUT 7>! are fighting. Here is their fight so far: 
+!<INPUT 8>!
+!<INPUT 1>! has the following items in the backpack: 
+!<INPUT 14>!
+Attributes of each item:
+
+- **sword:**
+  - Attack Power: 5
+  - Attack Range: 1
+
+- **bow:**
+  - Attack Power: 2
+  - Attack Range: 5
+
+!<INPUT 12>!'s current HP: !<INPUT 15>! / 100
+Enemy's current HP: !<INPUT 19>! / 100
+!<INPUT 12>!'s attack power: !<INPUT 20>!
+Enemy's attack power: !<INPUT 21>!
+!<INPUT 1>!'s position: !<INPUT 16>!
+!<INPUT 10>!'s position: !<INPUT 17>!
+The distance between them: !<INPUT 18>!
+
+---
+
+**Task:**
+
+Your goal is to help !<INPUT 12>! catch the enemy and deal as much damage as possible. To achieve this, you must choose one of the following actions:
+
+1. **"Attack"**: Use an appropriate weapon from the backpack to attack the enemy. The weapon must be within range to have an effect:
+   - If the weapon's attack range is greater than or equal to the distance between !<INPUT 12>! and the enemy, the attack will be effective.
+   - The total damage dealt to the enemy is calculated as:  
+     `Damage = !<INPUT 20>! (attack power) * Weapon's Attack Power`.
+
+2. **"Approach Enemy"**: If no weapon is within range, move closer to the enemy.  
+   - The system will automatically choose the best movement direction to minimize the distance.
+
+**Decision Rules:**
+
+- Always prioritize attacking the enemy if a weapon is within range.  
+- If no weapon is in range, choose to "Approach Enemy" to close the gap.  
+- Consider the weapon attributes, distance, and positions when deciding.
+
+**Output Format:**
+
+Output the decision in the following JSON format:  
+
+{
+  "!<INPUT 11>!": "<!<INPUT 12>!'s move>"
+}
+
+For example:  
+- If attacking with the sword is the best option:  
+  `{"!<INPUT 11>!": "Attack with sword"}`  
+
+- If moving closer to the enemy is the best option:  
+  `{"!<INPUT 11>!": "Approach Enemy"}` 

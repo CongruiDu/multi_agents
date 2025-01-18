@@ -202,7 +202,10 @@ class Persona:
         @ double studio:double studio:common room:sofa
     """
     # Updating persona's scratch memory with <curr_tile>. 
+    
     self.scratch.curr_tile = curr_tile
+    self.scratch.temp_tile = curr_tile
+    
 
     # We figure out whether the persona started a new day, and if it is a new
     # day, whether it is the very first day of the simulation. This is 

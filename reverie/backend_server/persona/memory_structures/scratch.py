@@ -29,6 +29,7 @@ class Scratch:
     # Current x,y tile coordinate of the persona. 
     self.curr_tile = None
     # Perceived world daily requirement. 
+    self.temp_tile = None
     self.daily_plan_req = None
     
     # Simulation start time
@@ -176,9 +177,11 @@ class Scratch:
     self.backpack = []
     self.team = None
     self.fighting_with = []
-    self.fight_end_time = None
+    self.fighting_end_time = None
     self.fighting_with_buffer = dict()
     self.speed = 1
+    self.power = 1
+    self.last_move = None
     
 
     if check_if_file_exists(f_saved): 
@@ -199,6 +202,7 @@ class Scratch:
       else: 
         self.curr_time = None
       self.curr_tile = scratch_load["curr_tile"]
+      self.temp_tile = scratch_load["curr_tile"]
       self.daily_plan_req = scratch_load["daily_plan_req"]
 
       self.name = scratch_load["name"]
@@ -256,6 +260,13 @@ class Scratch:
                                             "%B %d, %Y, %H:%M:%S")
       else:
         self.chatting_end_time = None
+      
+      if scratch_load["fighting_end_time"]:
+        self.fighting_end_time = datetime.datetime.strptime(
+                                            scratch_load["fighting_end_time"],
+                                            "%B %d, %Y, %H:%M:%S")
+      else:
+        self.fighting_end_time = None
 
       self.act_path_set = scratch_load["act_path_set"]
       self.planned_path = scratch_load["planned_path"]
@@ -263,10 +274,10 @@ class Scratch:
       self.fight = scratch_load['fight']
       self.speed = scratch_load['speed']
       self.fighting_with = scratch_load['fighting_with']
-      self.fight_end_time = scratch_load['fight_end_time']
       self.fighting_with_buffer = scratch_load['fighting_with_buffer']
       self.backpack = scratch_load['backpack']
       self.team = scratch_load['team']
+      self.power = scratch_load['power']
       
     
 
@@ -335,15 +346,16 @@ class Scratch:
     scratch["chat"] = self.chat
     scratch["chatting_with_buffer"] = self.chatting_with_buffer
     scratch["is_busy"] = self.is_busy
-    scratch["busy_until"] = self.busy_until
+    scratch["busy_until"] = self.busy_until.strftime("%B %d, %Y, %H:%M:%S")
     scratch["fight"] = self.fight
     scratch["hp"] = self.hp
     scratch["backpack"] = self.backpack
     scratch["team"] = self.team
     scratch['speed'] = self.speed
     scratch["fighting_with"] = self.fighting_with
-    scratch["fight_end_time"] = self.fight_end_time
+    scratch["fighting_end_time"] = self.fighting_end_time
     scratch["fighting_with_buffer"] = self.fighting_with_buffer
+    scratch["power"] = self.power
     
     if self.chatting_end_time: 
       scratch["chatting_end_time"] = (self.chatting_end_time
@@ -505,6 +517,12 @@ class Scratch:
   
   def set_team(self, team):
     self.team = team
+  
+  def get_power(self):
+    return self.power
+  
+  def set_power(self, power):
+    self.power = power
 
   def get_str_daily_plan_req(self): 
     return self.daily_plan_req

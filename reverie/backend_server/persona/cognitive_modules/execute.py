@@ -35,6 +35,8 @@ def execute(persona, maze, personas, plan):
   """
   if "<random>" in plan and persona.scratch.planned_path == []: 
     persona.scratch.act_path_set = False
+  elif persona.scratch.planned_path != []:
+    persona.scratch.act_path_set = True
 
   # <act_path_set> is set to True if the path is set for the current action. 
   # It is False otherwise, and means we need to construct a new path. 
@@ -89,11 +91,14 @@ def execute(persona, maze, personas, plan):
       # Retrieve the target addresses. Again, plan is an action address in its
       # string form. <maze.address_tiles> takes this and returns candidate 
       # coordinates. 
-      if plan not in maze.address_tiles: 
-        maze.address_tiles["Johnson Park:park:park garden"] #ERRORRRRRRR
-      else: 
-        target_tiles = maze.address_tiles[plan]
+      try:
+        if plan not in maze.address_tiles: 
+          maze.address_tiles["Johnson Park:park:park garden"] #ERRORRRRRRR
+        else: 
+          target_tiles = maze.address_tiles[plan]
 
+      except:
+        ipdb.set_trace()
     # There are sometimes more than one tile returned from this (e.g., a tabe
     # may stretch many coordinates). So, we sample a few here. And from that 
     # random sample, we will take the closest ones. 
@@ -152,10 +157,8 @@ def execute(persona, maze, personas, plan):
   ret = persona.scratch.curr_tile
   if persona.scratch.planned_path: 
     ret = persona.scratch.planned_path[0] # the value will be the next tile in the path
-    try:
-      persona.scratch.planned_path = persona.scratch.planned_path[persona.scratch.speed:] # the next tile in the path base on the speed of the persona
-    except:
-      persona.scratch.planned_path = persona.scratch.planned_path[1:]
+
+    persona.scratch.planned_path = persona.scratch.planned_path[1:]
 
   description = f"{persona.scratch.act_description}"
   description += f" @ {persona.scratch.act_address}"

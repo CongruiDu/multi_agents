@@ -1,0 +1,25 @@
+{
+  "persona": {
+    "Maria Lopez": {
+      "movement": [
+        57,
+        45
+      ],
+      "pronunciatio": "\u2694\ufe0f",
+      "description": "Klaus Mueller repeatedly attempted to evade the enemy by running in various directions, @ <persona> Klaus Mueller",
+      "chat": null
+    },
+    "Klaus Mueller": {
+      "movement": [
+        59,
+        49
+      ],
+      "pronunciatio": "\u2694\ufe0f",
+      "description": "Klaus Mueller repeatedly attempted to evade the enemy by running in various directions, @ <persona> Maria Lopez",
+      "chat": null
+    }
+  },
+  "meta": {
+    "curr_time": "February 13, 2023, 06:01:30"
+  }
+}

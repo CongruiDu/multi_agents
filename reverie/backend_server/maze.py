@@ -51,17 +51,17 @@ class Maze:
     wb_rows = read_file_to_list(_wb, header=False)
     wb = wb_rows[0][-1]
    
-    _sb = blocks_folder + "/sector_blocks.csv"
+    _sb = blocks_folder + "/sector_blocks_jan16.csv"
     sb_rows = read_file_to_list(_sb, header=False)
     sb_dict = dict()
     for i in sb_rows: sb_dict[i[0]] = i[-1]
     
-    _ab = blocks_folder + "/arena_blocks.csv"
+    _ab = blocks_folder + "/arena_blocks_jan16.csv"
     ab_rows = read_file_to_list(_ab, header=False)
     ab_dict = dict()
     for i in ab_rows: ab_dict[i[0]] = i[-1]
     
-    _gob = blocks_folder + "/game_object_blocks.csv"
+    _gob = blocks_folder + "/game_object_blocks_jan16.csv"
     gob_rows = read_file_to_list(_gob, header=False)
     gob_dict = dict()
     for i in gob_rows: gob_dict[i[0]] = i[-1]
@@ -76,13 +76,13 @@ class Maze:
     # the number that represents the color block from the blocks folder. 
     maze_folder = f"{env_matrix}/maze"
 
-    _cm = maze_folder + "/collision_maze.csv"
+    _cm = maze_folder + "/collision_maze_no_wall_v2.csv"
     collision_maze_raw = read_file_to_list(_cm, header=False)[0]
-    _sm = maze_folder + "/sector_maze.csv"
+    _sm = maze_folder + "/sector_maze_no_wall_v2.csv"
     sector_maze_raw = read_file_to_list(_sm, header=False)[0]
-    _am = maze_folder + "/arena_maze.csv"
+    _am = maze_folder + "/arena_maze_no_wall_v2.csv"
     arena_maze_raw = read_file_to_list(_am, header=False)[0]
-    _gom = maze_folder + "/game_object_maze.csv"
+    _gom = maze_folder + "/game_object_maze_no_wall_v2.csv"
     game_object_maze_raw = read_file_to_list(_gom, header=False)[0]
     _slm = maze_folder + "/spawning_location_maze.csv"
     spawning_location_maze_raw = read_file_to_list(_slm, header=False)[0]

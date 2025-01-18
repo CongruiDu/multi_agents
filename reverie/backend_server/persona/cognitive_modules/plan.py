@@ -318,7 +318,7 @@ def generate_battle(maze, init_persona, target_persona):
 
   battle = agent_battle_v1(maze, init_persona, target_persona)
 
-  battle_length = len(battle) * 1
+  battle_length = int(len(battle) // 2)
 
   if debug: print ("GNS FUNCTION: <generate_battle>")
   return battle, battle_length
@@ -836,8 +836,8 @@ def _should_react(persona, retrieved, personas):
       or init_persona.scratch.chatting_with): 
       return False
 
-    if (target_persona.name in init_persona.scratch.chatting_with_buffer): 
-      if init_persona.scratch.chatting_with_buffer[target_persona.name] > 0: 
+    if (target_persona.name in init_persona.scratch.chatting_with_buffer) or (target_persona.name in init_persona.scratch.fighting_with_buffer): 
+      if init_persona.scratch.chatting_with_buffer[target_persona.name] > 0 or init_persona.scratch.fighting_with_buffer[target_persona.name] > 0: 
         return False
 
     if generate_decide_to_talk(init_persona, target_persona, retrieved): 
@@ -929,13 +929,12 @@ def _should_react(persona, retrieved, personas):
 
   if ":" not in curr_event.subject: 
     # this is a persona event. 
-    ipdb.set_trace()
     if lets_fight(persona,personas[curr_event.subject], retrieved): # Decide whether to fight
       return f"fight with {curr_event.subject}"
     
     if lets_talk(persona, personas[curr_event.subject], retrieved):
       # return f"chat with {curr_event.subject}"
-      return f"chat with {curr_event.subject}"
+      return f"fight with {curr_event.subject}"
     
     react_mode = lets_react(persona, personas[curr_event.subject], 
                             retrieved)
@@ -998,21 +997,23 @@ def _create_react(persona, inserted_act, inserted_act_dur,
   ret = [[inserted_act, inserted_act_dur]]
     
   p.scratch.f_daily_schedule[start_index:end_index] = ret
-  
-  if "Battle" in inserted_act:
-    p.scratch.add_new_action_fight(act_address,
-                                  inserted_act_dur,
-                                  inserted_act,
-                                  act_pronunciatio,
-                                  act_event,
-                                  chatting_with,
-                                  chat,
-                                  chatting_with_buffer,
-                                  chatting_end_time,
-                                  act_obj_description,
-                                  act_obj_pronunciatio,
-                                  act_obj_event,
-                                  act_start_time)
+  try:
+    if "Battle" in inserted_act:
+      p.scratch.add_new_action_fight(act_address,
+                                    inserted_act_dur,
+                                    inserted_act,
+                                    act_pronunciatio,
+                                    act_event,
+                                    chatting_with,
+                                    chat,
+                                    chatting_with_buffer,
+                                    chatting_end_time,
+                                    act_obj_description,
+                                    act_obj_pronunciatio,
+                                    act_obj_event,
+                                    act_start_time)
+  except:
+    ipdb.set_trace()
     
   else:
     
@@ -1108,13 +1109,13 @@ def _fight_react(maze, persona, focused_event, reaction_mode, personas): # TODO:
       act_event = (p.name, "fight with", target_persona.name)
       fighting_with = target_persona.name
       fighting_with_buffer = {}
-      fighting_with_buffer[target_persona.name] = 800
+      fighting_with_buffer[target_persona.name] = 100
     elif role == "target": 
       act_address = f"<persona> {init_persona.name}"
       act_event = (p.name, "fight with", init_persona.name)
       fighting_with = init_persona.name
       fighting_with_buffer = {}
-      fighting_with_buffer[init_persona.name] = 800
+      fighting_with_buffer[init_persona.name] = 100
 
     act_pronunciatio = "⚔️" 
     act_obj_description = None
@@ -1229,7 +1230,6 @@ def plan(persona, maze, personas, new_day, retrieved):
   if focused_event: 
     reaction_mode = _should_react(persona, focused_event, personas)
     if reaction_mode: 
-      ipdb.set_trace()
       # If we do want to chat, then we generate conversation 
       if reaction_mode[:9] == "chat with":
         _chat_react(maze, persona, focused_event, reaction_mode, personas)
@@ -1247,6 +1247,12 @@ def plan(persona, maze, personas, new_day, retrieved):
     persona.scratch.chatting_with = None
     persona.scratch.chat = None
     persona.scratch.chatting_end_time = None
+    
+  if persona.scratch.act_event[1] != "fight with":
+    persona.scratch.fighting_with = []
+    persona.scratch.fight = None
+    persona.scratch.fighting_end_time = None
+    
   # We want to make sure that the persona does not keep conversing with each
   # other in an infinite loop. So, chatting_with_buffer maintains a form of 
   # buffer that makes the persona wait from talking to the same target 
@@ -1255,6 +1261,11 @@ def plan(persona, maze, personas, new_day, retrieved):
   for persona_name, buffer_count in curr_persona_chat_buffer.items():
     if persona_name != persona.scratch.chatting_with: 
       persona.scratch.chatting_with_buffer[persona_name] -= 1
+
+  curr_persona_fight_buffer = persona.scratch.fighting_with_buffer
+  for persona_name, buffer_count in curr_persona_fight_buffer.items():
+    if persona_name != persona.scratch.fighting_with: 
+      persona.scratch.fighting_with_buffer[persona_name] -= 1
 
   return persona.scratch.act_address
 

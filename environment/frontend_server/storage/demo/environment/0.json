@@ -1,13 +1,18 @@
 {
   "Klaus Mueller": {
     "maze": "the_ville",
-    "x": 126,
-    "y": 46
+    "x": 55,
+    "y": 41
   },
   "Maria Lopez": {
     "maze": "the_ville",
-    "x": 123,
-    "y": 57
+    "x": 55,
+    "y": 48
+  },
+  "Peter Parker":{
+    "maze": "the_ville",
+    "x": 84,
+    "y": 54
   }
 }
 

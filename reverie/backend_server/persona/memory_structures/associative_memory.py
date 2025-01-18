@@ -13,7 +13,7 @@ sys.path.append('../../')
 import json
 import datetime
 import ipdb
-
+import numpy as np
 from global_methods import *
 
 

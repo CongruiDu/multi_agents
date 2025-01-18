@@ -1958,7 +1958,7 @@ def run_gpt_prompt_summarize_battle(persona, battle, test_input=None, verbose=Fa
     return prompt_input
   
   def __func_clean_up(gpt_response, prompt=""):
-    ret = "conversing about " + gpt_response.strip()
+    ret =  gpt_response.strip()
     return ret
 
   def __func_validate(gpt_response, prompt=""): 
@@ -1995,13 +1995,8 @@ def run_gpt_prompt_summarize_battle(persona, battle, test_input=None, verbose=Fa
   example_output = "Tom and Jerry exchanged sword attacks, briefly defended, and then Tom struck again while Jerry chose to run away." ########
   special_instruction = "The output must continue the sentence above by filling in the <fill in> tag. Don't start with 'In this battle, ...' Just finish the sentence but do not miss any important details (including who are fighting)." ########
   fail_safe = get_fail_safe() ########
-  output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
+  output = GPT_request(prompt, gpt_param)
   if output != False: 
-    return output, [output, prompt, gpt_param, prompt_input, fail_safe]
-  else:
-    output = ChatGPT_safe_generate_response(prompt, example_output, special_instruction, 3, fail_safe,
-                                          __chat_func_validate, __chat_func_clean_up, True)
     return output, [output, prompt, gpt_param, prompt_input, fail_safe]
   
   
@@ -3331,21 +3326,20 @@ def run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, ret
   def create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_fight, test_input=None):
     persona = init_persona
     prev_convo_insert = "\n"
-    if persona.a_mem.seq_chat: 
-      for i in persona.a_mem.seq_chat: 
+    if persona.a_mem.seq_fight: 
+      for i in persona.a_mem.seq_fight: 
         if i.object == target_persona.scratch.name: 
           v1 = int((persona.scratch.curr_time - i.created).total_seconds()/60)
           prev_convo_insert += f'{str(v1)} minutes ago, {persona.scratch.name} and {target_persona.scratch.name} were already {i.description} This context takes place after that battle.'
           break
     if prev_convo_insert == "\n": 
       prev_convo_insert = ""
-    if persona.a_mem.seq_chat: 
-      if int((persona.scratch.curr_time - persona.a_mem.seq_chat[-1].created).total_seconds()/60) > 480: 
+    if persona.a_mem.seq_fight: 
+      if int((persona.scratch.curr_time - persona.a_mem.seq_fight[-1].created).total_seconds()/60) > 480: 
         prev_convo_insert = ""
     print (prev_convo_insert)
-
-    curr_sector = f"{maze.access_tile(persona.scratch.curr_tile)['sector']}"
-    curr_arena= f"{maze.access_tile(persona.scratch.curr_tile)['arena']}"
+    curr_sector = f"{maze.access_tile(persona.scratch.temp_tile)['sector']}"
+    curr_arena= f"{maze.access_tile(persona.scratch.temp_tile)['arena']}"
     curr_location = f"{curr_arena} in {curr_sector}"
 
     retrieved_str = ""
@@ -3361,13 +3355,13 @@ def run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, ret
       convo_str = "[The battle has not started yet -- start it!]"
 
     init_iss = f"Here is Here is a brief description of {init_persona.scratch.name}.\n{init_persona.scratch.get_str_iss()}"
-    distance = math.dist(init_persona.scratch.curr_tile, target_persona.scratch.curr_tile)
+    distance = math.dist(init_persona.scratch.temp_tile, target_persona.scratch.temp_tile)
     prompt_input = [init_iss, init_persona.scratch.name, retrieved_str, prev_convo_insert,
       curr_location, curr_context, init_persona.scratch.name, target_persona.scratch.name,
       convo_str, init_persona.scratch.name, target_persona.scratch.name,
       init_persona.scratch.name, init_persona.scratch.name,
-      init_persona.scratch.name, init_persona.scratch.backpack,init_persona.scratch.hp,init_persona.scratch.curr_tile, 
-      target_persona.scratch.curr_tile,distance,target_persona.scratch.hp
+      init_persona.scratch.name, init_persona.scratch.backpack,init_persona.scratch.hp,init_persona.scratch.temp_tile, 
+      target_persona.scratch.temp_tile,distance,target_persona.scratch.hp,init_persona.scratch.power, target_persona.scratch.power,init_persona.scratch.last_move
       ]
     return prompt_input
 
@@ -3403,9 +3397,15 @@ def run_gpt_generate_iterative_fight_utt(maze, init_persona, target_persona, ret
 
   print("Start Fighting!!!!!")
   prompt_template = "persona/prompt_template/v3_ChatGPT/iterative_battle_v1.txt" 
+  # if init_persona.name == 'Klaus Mueller':
+  #   prompt_template = "persona/prompt_template/v3_ChatGPT/iterative_battle_run_v1.txt"
   prompt_input = create_prompt_input(maze, init_persona, target_persona, retrieved, curr_context, curr_fight) 
   prompt = generate_prompt(prompt_input, prompt_template)
-  print (prompt)
+  print('-----------------------------------------------------------------------------')
+  print(f"position of {init_persona.name}: ", init_persona.scratch.temp_tile)
+  print(f"position of {target_persona.name}: ", target_persona.scratch.temp_tile)
+  print('hp of ', init_persona.name, init_persona.scratch.hp)
+  print('hp of ', target_persona.name, target_persona.scratch.hp)
   fail_safe = get_fail_safe() 
   output = ChatGPT_safe_generate_response_OLD(prompt, 3, fail_safe,
                         __chat_func_validate, __chat_func_clean_up, verbose)

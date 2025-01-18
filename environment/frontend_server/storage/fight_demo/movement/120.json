@@ -1,0 +1,27 @@
+{
+  "persona": {
+    "Maria Lopez": {
+      "movement": [
+        63,
+        52
+      ],
+      "pronunciatio": [
+        "\ud83d\udee0"
+      ],
+      "description": "practicing survival skills (building makeshift gadgets) @ the Ville:Hospital:waiting room:vending machine",
+      "chat": null
+    },
+    "Klaus Mueller": {
+      "movement": [
+        55,
+        51
+      ],
+      "pronunciatio": "\u2694\ufe0f",
+      "description": "Klaus Mueller repeatedly attempted to evade the enemy by running in various directions, @ <persona> Maria Lopez",
+      "chat": null
+    }
+  },
+  "meta": {
+    "curr_time": "February 13, 2023, 06:20:00"
+  }
+}

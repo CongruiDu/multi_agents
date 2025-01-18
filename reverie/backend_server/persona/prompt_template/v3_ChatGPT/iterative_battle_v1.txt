@@ -21,6 +21,8 @@ Variables:
 !<INPUT 17>! -- target persona position
 !<INPUT 18>! -- distance
 !<INPUT 19>! -- target persona hp
+!<INPUT 20>! -- init persona power
+!<INPUT 21>! -- target person power
 <commentblockmarker>###</commentblockmarker>
 Context for the task: 
 
@@ -47,7 +49,7 @@ Attributes of each items:
 
 sword:
 Attack Power: 5
-Attack Range：2
+Attack Range：1
 
 bow:
 Attack Power: 2
@@ -55,15 +57,19 @@ Attack Range：5
 
 !<INPUT 12>!'s current hp: !<INPUT 15>! / 100
 Enemy's current hp: !<INPUT 19>! / 100
+!<INPUT 12>!'s attack power: !<INPUT 20>!
+Enemy's attack power: !<INPUT 21>!
 !<INPUT 1>!'s position: !<INPUT 16>!
 !<INPUT 10>! 's psotion: !<INPUT 17>!
 The distance between them: !<INPUT 18>!
 
 ---
-Task: Given the above, what should !<INPUT 9>! do to !<INPUT 10>! next in the round of fight? You must pick one of the options from ["Attack", "Run Away", "Defend","Approach Enemy“]. 
+Task: Given the above, what should !<INPUT 9>! do to !<INPUT 10>! next in the round of fight? You must pick one of the options from ["Attack", "Run Away", "Defend","Approach Enemy“].
 If you choose "Defend", !<INPUT 9>!'s hp will not be reduced no matter what move enemy will make.
 If you choose "Attack", please indicate what item you want to use to attack based on what the person has in the backpack by outputing "Attack with <weapon>".
+If you choose "Run Away", please indicate which direction, chosing from ["up","down","left","right"], by outputing "Run Away, <direction>".
 Please note if the attack range of the weapon is less than the distance, there will be no effect to the enemy.
+Please note that the total damage is person's attack power times weapon's attack power. For example, if person with attack power of 3 use sword (attack power: 5) will cause 15 damage to the enemy.
 
 Output format: Output a json of the following format: 
 {

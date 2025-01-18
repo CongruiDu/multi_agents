@@ -8,6 +8,7 @@ import math
 import sys
 import datetime
 import random
+import ipdb
 sys.path.append('../')
 
 from global_methods import *
@@ -198,28 +199,64 @@ def handle_attack(attacker, defender, move_attacker, move_defender, weapon_stats
   """Handle attack logic between two personas."""
   for weapon, stats in weapon_stats.items():
     if f"Attack with {weapon}" in move_attacker and "Defend" not in move_defender:
-        distance = math.dist(attacker.scratch.curr_tile, defender.scratch.curr_tile)
-        if distance <= stats["range"]:
-            defender.scratch.hp -= stats["power"]
+        if weapon in attacker.scratch.backpack:
+          distance = math.dist(attacker.scratch.temp_tile, defender.scratch.temp_tile)
+          if distance <= stats["range"]:
+              defender.scratch.hp -= stats["power"]
+        
 
 def handle_movement(persona, target, move, maze, collision_block_id):
   """Handle movement logic for approaching the enemy."""
+  distance = math.dist(persona.scratch.temp_tile, target.scratch.temp_tile)
   if "Approach Enemy" in move:
     path = path_finder(maze.collision_maze, 
-                        persona.scratch.curr_tile, 
-                        target.scratch.curr_tile, 
+                        persona.scratch.temp_tile, 
+                        target.scratch.temp_tile, 
                         collision_block_id)
-    if len(path) > persona.scratch.speed:
-        persona.scratch.curr_tile = path[persona.scratch.speed]
+    if len(path) > persona.scratch.speed and distance > 0:
+        persona.scratch.planned_path.append(path[persona.scratch.speed])
+        persona.scratch.temp_tile = path[persona.scratch.speed]
+    # if persona.scratch.curr_tile == target.scratch.curr_tile:
+    #     persona.scratch.curr_tile = (target.scratch.curr_tile[0] + 1, target.scratch.curr_tile[1])
+
 def handle_escape(persona, move, maze):
   """Handle escape logic for running away from the enemy."""
-  if "Run" in move:
-    path = path_finder(maze.collision_maze, 
-                        persona.scratch.curr_tile, 
-                        maze.exit_tile, 
-                        collision_block_id)
-    if len(path) > persona.scratch.speed:
-        persona.scratch.curr_tile = path[persona.scratch.speed]
+  move_speed = persona.scratch.speed
+  if 'up' in move:
+    target_tile = (persona.scratch.temp_tile[0], persona.scratch.temp_tile[1] - move_speed)
+    x,y = target_tile
+    
+    if maze.collision_maze[y][x] == '0':
+      persona.scratch.planned_path.append(target_tile)
+      persona.scratch.temp_tile = target_tile
+  elif 'down' in move:
+    target_tile = (persona.scratch.temp_tile[0], persona.scratch.temp_tile[1] + move_speed)
+    x,y = target_tile
+    if maze.collision_maze[y][x] == '0':
+      persona.scratch.planned_path.append(target_tile)
+      persona.scratch.temp_tile = target_tile
+  elif 'left' in move:
+    target_tile = (persona.scratch.temp_tile[0] - move_speed, persona.scratch.temp_tile[1])
+    x,y = target_tile
+    if maze.collision_maze[y][x] == '0':
+      persona.scratch.planned_path.append(target_tile)
+      persona.scratch.temp_tile = target_tile
+  elif 'right' in move:
+    target_tile = (persona.scratch.temp_tile[0] + move_speed, persona.scratch.temp_tile[1])
+    x,y = target_tile
+    if maze.collision_maze[y][x] == '0':
+      persona.scratch.planned_path.append(target_tile)
+      persona.scratch.temp_tile = target_tile
+def end_battle(init_persona, target_persona):
+  """Check if the battle has ended."""
+  distance = math.dist(init_persona.scratch.temp_tile, target_persona.scratch.temp_tile)
+  if init_persona.scratch.hp <= 0:
+    return True
+  if target_persona.scratch.hp <= 0:
+    return True
+  if distance > 8:
+    return True
+  return False
 def update_battle_status(init_persona, target_persona, move_init, move_target, maze):
   """
   Update the health and position of the personas based on their moves.
@@ -236,7 +273,7 @@ def update_battle_status(init_persona, target_persona, move_init, move_target, m
       True if the battle ends (one persona is dead or someone runs), False otherwise
   """
   weapon_stats = {
-      "sword": {"power": 5, "range": 2},
+      "sword": {"power": 5, "range": 1},
       "bow": {"power": 2, "range": 5}
   }
   
@@ -248,8 +285,9 @@ def update_battle_status(init_persona, target_persona, move_init, move_target, m
   
   handle_escape(init_persona, move_init, maze)
   handle_escape(target_persona, move_target, maze)
+  
 
-  if init_persona.scratch.hp <= 0 or target_persona.scratch.hp <= 0 or "Run" in move_init or "Run" in move_target:
+  if end_battle(init_persona, target_persona):
       return True
   
   return False
@@ -261,7 +299,7 @@ def agent_battle_v1(maze, init_persona, target_persona):
   curr_fight = []
   print ("July 23")
 
-  for i in range(8):
+  while True:
     
     # -----------Below will generate the move for the init persona----------------
     focal_points = [f"{target_persona.scratch.name}"]
@@ -280,6 +318,7 @@ def agent_battle_v1(maze, init_persona, target_persona):
                       f"{target_persona.scratch.name} is {target_persona.scratch.act_description}"]
     retrieved = new_retrieve(init_persona, focal_points, 15)
     move_init = generate_one_utterance_fight(maze, init_persona, target_persona, retrieved, curr_fight)
+    init_persona.scratch.last_move = move_init
     
     # -----------Below will generate the move for the target persona----------------
     focal_points = [f"{init_persona.scratch.name}"]
@@ -298,6 +337,7 @@ def agent_battle_v1(maze, init_persona, target_persona):
                       f"{init_persona.scratch.name} is {init_persona.scratch.act_description}"]
     retrieved = new_retrieve(target_persona, focal_points, 15)
     move_target = generate_one_utterance_fight(maze, target_persona, init_persona, retrieved, curr_fight)
+    target_persona.scratch.last_move = move_target
     end=update_battle_status(init_persona, target_persona, move_init, move_target,maze)
     default_weapon = "sword"
     if move_init == "Attack":
@@ -307,13 +347,15 @@ def agent_battle_v1(maze, init_persona, target_persona):
     curr_fight += [[init_persona.scratch.name, move_init]]
     curr_fight += [[target_persona.scratch.name, move_target]]
     
+    
     if end:
       break
-
+  
   print("Currently, the health status of the two personas are as follows:")
   print(f"{init_persona.scratch.name}: {init_persona.scratch.hp}")
   print(f"{target_persona.scratch.name}: {target_persona.scratch.hp}")
   print ("++++++++++++++\n")
+  ipdb.set_trace()
   for row in curr_fight: 
     print (row)
 
